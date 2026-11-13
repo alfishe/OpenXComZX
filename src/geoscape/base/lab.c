@@ -41,7 +41,7 @@ static uint8_t rl(const rtab_t *t, const rlist_t *l, uint16_t *out, uint8_t max)
 }
 
 // То же, но список пар (ref, количество): requiredItems и producedItems правил хранятся
-// парами (refmap, OxzConv/Core/Rules.cs), и на пару приходится 4 байта. Раньше их читали
+// парами (refmap, tools/oxzconv/lib/rules.js), и на пару приходится 4 байта. Раньше их читали
 // как одиночные значения, и количество бралось из неинициализированного стека: на склад
 // попадало мусорное число штук, материалы списывались как попало (ревизия 2026-09-26).
 static uint8_t rl_pairs(const rtab_t *t, const rlist_t *l, uint16_t *out, uint8_t max)

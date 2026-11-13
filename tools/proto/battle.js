@@ -24,7 +24,7 @@ const BUF_W = 512, BUF_H = 456;            // буфер прокрутки
 
 // ---------------------------------------------------------------- разбор файлов
 
-// PCK + TAB: кадры w x h, 254 — пропуск n точек, 255 — конец кадра (Formats.cs DecodePck)
+// PCK + TAB: кадры w x h, 254 — пропуск n точек, 255 — конец кадра (formats.js DecodePck)
 function readPck(pck, tab, w = TILE_W, h = TILE_H) {
 	const wide = tab.length >= 4 && tab.readUInt16LE(2) === 0 && tab.length % 4 === 0;
 	const n = wide ? tab.length / 4 : tab.length / 2;

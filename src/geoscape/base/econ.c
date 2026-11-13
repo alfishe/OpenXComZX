@@ -103,7 +103,7 @@ uint8_t soldier_nth(uint8_t b, uint8_t k) __banked
 	return r;
 }
 
-// Строка k пула p из ресурса NAMES (Names.cs) -> buf.
+// Строка k пула p из ресурса NAMES (names.js) -> buf.
 static void pool_name(far_t base, uint16_t off, uint16_t skip, char *buf)
 {
 	char c[32];

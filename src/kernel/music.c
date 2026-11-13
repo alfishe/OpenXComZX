@@ -39,8 +39,8 @@ extern uint8_t mus_pause, mus_played, mus_pushed;
 extern uint16_t mus_out;
 
 // Поток под чип выбирается в настройках (11_sound.md): для OPL3 — записи в регистры FM,
-// для AY — тот же трек, сведённый конвертером на три канала (MusicAy.cs), для двух YM2203 —
-// на шесть FM-каналов (MusicFm.cs; SSG обоих чипов остаётся эффектам).
+// для AY — тот же трек, сведённый конвертером на три канала (musicay.js), для двух YM2203 —
+// на шесть FM-каналов (musicfm.js; SSG обоих чипов остаётся эффектам).
 static const char *const pak_name[2][3] = {
 	{ "OXZ/UFO/MUSIC.PAK", "OXZ/UFO/MUSICAY.PAK", "OXZ/UFO/MUSICFM.PAK" },
 	{ "OXZ/TFTD/MUSIC.PAK", "OXZ/TFTD/MUSICAY.PAK", "OXZ/TFTD/MUSICFM.PAK" },

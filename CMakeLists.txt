@@ -45,24 +45,8 @@ if(NOT SDCC_VERSION_TEXT MATCHES " 4\\.5\\.0 ")
     message(WARNING "SDCC is not 4.5.0 (${OXZ_SDCC}): the workarounds are verified on 4.5.0 only")
 endif()
 
-# Converter OxzConv: .NET Framework 4.8 exe on Windows, net10.0 apphost elsewhere.
-if(CMAKE_HOST_WIN32)
-    set(CONV ${ROOT}/tmp/oxzconv/bin/Release/OxzConv.exe)
-    set(CONV_RUN ${CONV})
-else()
-    set(CONV ${ROOT}/tmp/oxzconv/bin/Release/OxzConv)
-    # The apphost looks for .NET in /usr/local/share/dotnet unless told otherwise; point it
-    # at the runtime of the `dotnet` on PATH (Homebrew keeps it in libexec).
-    set(DOTNET_ROOT_DIR "$ENV{DOTNET_ROOT}")
-    if(NOT DOTNET_ROOT_DIR)
-        execute_process(COMMAND dotnet --list-runtimes OUTPUT_VARIABLE RUNTIMES ERROR_QUIET)
-        # "Microsoft.NETCore.App 10.0.0 [<root>/shared/Microsoft.NETCore.App]" -> <root>
-        if(RUNTIMES MATCHES "Microsoft\\.NETCore\\.App [^ ]+ \\[([^]\n]+)/shared/Microsoft\\.NETCore\\.App\\]")
-            set(DOTNET_ROOT_DIR ${CMAKE_MATCH_1})
-        endif()
-    endif()
-    set(CONV_RUN ${CMAKE_COMMAND} -E env DOTNET_ROOT=${DOTNET_ROOT_DIR} ${CONV})
-endif()
+# Converter OxzConv: Node.js (tools/oxzconv), no build step.
+set(CONV_RUN ${OXZ_NODE} ${ROOT}/tools/oxzconv/oxzconv.js)
 set(PWSH_RUN ${OXZ_PWSH} -NoProfile -ExecutionPolicy Bypass -File)
 
 # --------------------------------------------------------------------- memory layout
@@ -151,16 +135,13 @@ set(PACKS PAL LANG RULES GEO MCD)
 
 # ------------------------------------------------------------ converter and game data
 file(GLOB_RECURSE CONV_SRC CONFIGURE_DEPENDS
-    ${ROOT}/OxzConv/*.cs ${ROOT}/OxzConv/*.csproj ${ROOT}/OxzConv/*.props
-    ${ROOT}/OxzConv/Data/*.txt ${ROOT}/OxzConv/Data/*.json)
-list(FILTER CONV_SRC EXCLUDE REGEX "/(bin|obj)/")
+    ${ROOT}/tools/oxzconv/*.js ${ROOT}/tools/oxzconv/data/*.txt ${ROOT}/tools/oxzconv/data/*.json)
+# The stamp is the converter's "version": newer than RULES.PAK means the data is stale.
 set(CONV_STAMP ${STAMPS}/oxzconv.stamp)
 add_custom_command(OUTPUT ${CONV_STAMP}
-    COMMAND ${PWSH_RUN} ${ROOT}/tools/dotnet.ps1 build ${ROOT}/OxzConv/OxzConv.csproj -c Release -v q
     COMMAND ${CMAKE_COMMAND} -E touch ${CONV_STAMP}
     DEPENDS ${CONV_SRC}
-    WORKING_DIRECTORY ${ROOT}
-    COMMENT "OxzConv: build the data converter"
+    COMMENT "OxzConv: converter changed"
     VERBATIM)
 
 if(OXZ_GAME_DIR)
@@ -181,7 +162,7 @@ endforeach()
 # (cmake/convert.cmake): data from a previous build or another machine is kept.
 add_custom_command(OUTPUT ${DATA_STAMP}
     BYPRODUCTS ${PACK_FILES}
-    COMMAND ${CMAKE_COMMAND} "-DCONV_RUN=${CONV_RUN}" "-DCONV=${CONV}"
+    COMMAND ${CMAKE_COMMAND} "-DCONV_RUN=${CONV_RUN}" "-DCONV=${CONV_STAMP}"
             "-DGAME_DIR=${GAME_DIR}" "-DSD_OUT=${SD_OUT}" "-DRULES=${DATA}/RULES.PAK"
             "-DSTAMP=${DATA_STAMP}" -P ${ROOT}/cmake/convert.cmake
     DEPENDS ${CONV_STAMP} ${ROOT}/cmake/convert.cmake

@@ -1,7 +1,7 @@
 # Game data conversion step of CMakeLists.txt (cmake -P): runs OxzConv only when the packs
 # are missing or older than the converter, so packs made earlier (by build.ps1 or copied
 # from another machine) are kept as long as the converter is the same.
-#   -DCONV_RUN=<converter command> -DCONV=<converter executable>
+#   -DCONV_RUN=<converter command> -DCONV=<converter stamp, touched when its sources change>
 #   -DGAME_DIR=<game folder> -DSD_OUT=<tmp/sd> -DRULES=<.../RULES.PAK> -DSTAMP=<step stamp>
 if(NOT EXISTS "${RULES}" OR "${CONV}" IS_NEWER_THAN "${RULES}")
     if(NOT EXISTS "${GAME_DIR}")

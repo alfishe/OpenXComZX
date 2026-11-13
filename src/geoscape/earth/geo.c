@@ -242,7 +242,7 @@ void geo_move(geo_t *p, const geo_vel_t *v, uint16_t n) __banked
 
 // ---------------------------------------------------------------- маска полигонов
 
-// WORLDMAP (OxzConv/Core/WorldMap.cs): текстура полигона WORLD.DAT в точке или -1.
+// WORLDMAP (tools/oxzconv/lib/worldmap.js): текстура полигона WORLD.DAT в точке или -1.
 // Растр 1° ниббл, граничные клетки — подрастр 1/8°.
 int8_t world_texture(uint16_t lon, int16_t lat) __banked
 {

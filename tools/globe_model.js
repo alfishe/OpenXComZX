@@ -21,7 +21,7 @@ const dir = game === 'TFTD' ? 'Steam/X-COM Terror from the Deep/TFD' : 'Steam/XC
 const pb = fs.readFileSync(dir + '/GEODATA/PALETTES.DAT');
 const pal = []; for (let i = 0; i < 256; i++) pal.push([pb[i * 3] * 255 / 63 | 0, pb[i * 3 + 1] * 255 / 63 | 0, pb[i * 3 + 2] * 255 / 63 | 0]);
 const OCEAN = game === 'TFTD' ? 16 : 192;
-const nCell = G.readUInt16LE(0), nBlk6 = G.readUInt16LE(2);   // ресурс v6: блоки ячеек с подблоками (Globe.cs)
+const nCell = G.readUInt16LE(0), nBlk6 = G.readUInt16LE(2);   // ресурс v6: блоки ячеек с подблоками (globe.js)
 const ct = 6, bt = ct + nCell * 16, gt = bt + nBlk6 * 6;
 const rdv = o => { const r = []; for (let k = 0; k < 3; k++) { const lo = G[o + k * 2], hi = G.readInt8(o + k * 2 + 1); r.push((hi * 128 + lo) / 16384); } return r; };
 const ZR = [90, 120, 180, 280, 450, 720];

@@ -114,7 +114,7 @@ function frameMask(img) {
 	maskCache.set(img, m);
 	return m;
 }
-// габариты как их режет конвертер (Sprites.cs:14-29): x0 чётный, ширина чётная
+// габариты как их режет конвертер (sprites.js:14-29): x0 чётный, ширина чётная
 function frameBox(img) {
 	let b = boxCache.get(img);
 	if (b) return b;

@@ -19,40 +19,44 @@
 пользователя. В утилиту входят файлы OpenXcom (правила `*.rul`, строки,
 шрифты — GPL, `REF/OpenXcom/bin`), это не данные оригинала.
 
-## 2. Утилита `OxzConv.exe` (C#, .NET Framework 4.8)
+## 2. Утилита `tools/oxzconv` (Node.js)
 
-Решение пользователя: **один консольный exe на .NET Framework 4.8** (есть на
-любой Windows 10/11, ставится на 7/8.1), без установки чего-либо. Парсер YAML
-(YamlDotNet) и нужные файлы OpenXcom (правила, строки en-US, шрифты) вшиты в
-exe ресурсами (~1.3 МБ).
+Конвертер — скрипт Node.js без внешних пакетов (YAML — вшитый `vendor/js-yaml.js`
+4.1.0, MIT, с правкой: словари грузятся как `Map` в порядке файла). Нужен только
+`node`, тот же, что для остальных скриптов сборки; .NET и PowerShell не нужны.
+Файлы OpenXcom (правила, строки en-US, шрифты, `SoldierName/*.nam`) берутся из
+`REF/OpenXcom/bin` или из каталога `--oxcom`.
 
 ```
-OxzConv.exe                                  # спросит каталог игры и куда писать
-OxzConv.exe <каталог игры>                   # можно перетащить папку на exe; данные — рядом с exe
-OxzConv.exe --game DIR --out DIR [--preview DIR] [--oxcom <bin OpenXcom>] [--lang en-US]
-                                 [--music adlib|midi]   # источник музыки для AY и FM, 22 §11
-OxzConv.exe headers <каталог>                # заголовки C для движка (зовёт tools/build.ps1)
+node tools/oxzconv/oxzconv.js --game DIR --out DIR [--preview DIR] [--oxcom <bin OpenXcom>] [--lang en-US]
+                              [--music adlib|midi]   # источник музыки для AY и FM, 22 §11
+node tools/oxzconv/oxzconv.js headers <каталог>      # заголовки C для движка (зовёт CMakeLists.txt)
+node tools/oxzconv/oxzconv.js dump <OXZ/игра> [таблица [число]]
 ```
 
-Результат — каталог `OXZ/<игра>/`, его копируют в корень SD-карты.
-
-Сборка (все кэши dotnet/NuGet — в `tmp/dotnet`, правило проекта):
-`powershell -File tools\dotnet.ps1 build OxzConv\OxzConv.csproj -c Release`
-→ `tmp/oxzconv/bin/Release/OxzConv.exe`. Для разработки:
+Результат — каталог `OXZ/<игра>/`, его копируют в корень SD-карты. Сборка
+(`CMakeLists.txt`) зовёт конвертер сама, когда данных нет или исходники
+конвертера новее (`cmake/convert.cmake`). Для разработки:
 `--out tmp/sd --preview tmp/preview`.
 
-Код `OxzConv/`: `Program.cs` (загрузка вшитой YamlDotNet),
-`Cli.cs`, `Core/Converter.cs` (шаги), `Core/GameFs.cs` (каталог игры без
-учёта регистра, UFO/TFTD), `Core/Formats.cs` (SCR, SPK, BDY, PCK/TAB 16/32,
-DAT, LBM, палитры), `Core/Png.cs` (zlib вручную — в 4.8 нет ZLibStream),
-`Core/Cram.cs`, `Core/Sprites.cs`, `Core/Pack.cs`, `Core/ResIds.cs`
-(+ реестры), `Core/Strings.cs`, `Core/Fonts.cs`, `Core/Interfaces.cs`,
-`Core/Music.cs`, `Core/Headers.cs`, `Core/OxcomData.cs`, `Core/Yaml.cs`;
-реестры — `Data/*.txt`, `Data/screen_backgrounds.json`.
+Код `tools/oxzconv/`: `oxzconv.js` (командная строка), `lib/converter.js` (шаги),
+`lib/gamefs.js` (каталог игры без учёта регистра, UFO/TFTD), `lib/formats.js`
+(SCR, SPK, BDY, PCK/TAB 16/32, DAT, LBM, палитры), `lib/png.js`, `lib/cram.js`,
+`lib/sprites.js`, `lib/pack.js`, `lib/resids.js` (+ реестры), `lib/strings.js`,
+`lib/fonts.js`, `lib/interfaces.js`, `lib/music*.js`, `lib/globe*.js`,
+`lib/battle*.js`, `lib/rules*.js`, `lib/headers.js`, `lib/oxcom.js`, `lib/yaml.js`,
+`lib/csmath.js`, `lib/vec3.js`, `lib/musicutil.js` (арифметика как в .NET: округление
+к чётному, приведение к int); реестры — `data/*.txt`, `data/screen_backgrounds.json`.
 
-Первая версия была на Node.js; перенос на C# проверен **побайтным
-совпадением всех 18 выходных файлов обеих игр** и совпадением заголовков,
-после чего версия на Node удалена.
+История: первая версия была на Node.js, потом её перенесли на C# (.NET Framework 4.8,
+один exe). 2026-11-13 конвертер снова переведён на Node.js — сборка без .NET. Перенос
+проверен **побайтным совпадением всех выходных файлов обеих игр** (20 файлов на игру,
+включая `RESIDS.TXT`, `RULEWARN.TXT`), заголовков, VGM предпросмотра и пикселей всех
+356 картинок предпросмотра, и источник музыки `midi` тоже. Одно исключение: TFTD,
+`GLOBE` — клетка сетки 5° №582 и два вида `GVIEW.PAK` (z2 №1992, 2510). Точка ребра
+лежит ровно на границе клетки (φ = −45°), и разница в последнем бите sin/cos между
+libm macOS (C#) и fdlibm V8 (Node) кладёт её по разные стороны. Вывод C# от этого зависел
+от ОС; вывод Node одинаков на всех ОС.
 
 - `--game` — каталог с `GEODATA`, `GEOGRAPH`, `UFOGRAPH`, … (Steam:
   `.../XCOM` или `.../TFD`). Регистр имён не важен.
@@ -149,7 +153,7 @@ offset — от начала данных кадров, в словах, т.е. 
 | `BATTLE.PAK` | карты боя: `BATMAP0..2` (готовые поля) и их тайлсеты `BATTILE0..2` (с 2026-09-18) | SD-карта |
 | `MUSIC.PAK` | музыка | пока не используется движком |
 
-**`BATTLE.PAK` (`Core/Battle.cs`)** — временное решение до генератора карт
+**`BATTLE.PAK` (`tools/oxzconv/lib/battle.js`)** — временное решение до генератора карт
 (16 §3): конвертер сам замащивает поле 4×4 блоками 10×10 первых доступных
 террейнов (TFTD — SEABED, CORAL, VOLC; UFO — CULTA, DESERT, FOREST) и
 складывает результат в готовый ресурс, движок только рисует. Ресурс
@@ -207,7 +211,7 @@ pos, size, TFTDMode); элементы родителя развёрнуты п�
 **Реестры с фиксированными номерами** (общие для UFO и TFTD, только
 дописывать): `Data/engine_strings.txt` (961), `Data/ui_screens.txt` (98),
 `Data/ui_elements.txt` (163), `Data/music_types.txt` (47), статические
-ресурсы — `Core/ResIds.cs`. `OxzConv.exe headers` делает из них `res_ids.h`,
+ресурсы — `tools/oxzconv/lib/resids.js`. `oxzconv.js headers` делает из них `res_ids.h`,
 `str_ids.h`, `ui_ids.h`, `mus_ids.h` (вызывается из `tools/build.ps1`,
 выход в `tmp/build/gen`). Реестры собраны однократно (из `interfaces.rul` и
 `music.rul` обеих игр, ключи строк — из `REF/OpenXcom/src`).
@@ -242,7 +246,7 @@ TS-Config 3 500 000 / 71 680 = 48.83 Гц** (идея пользователя: 
 «местами цвета не те». Какой экран какой фон рисует —
 `tools/conv/data/screen_backgrounds.json` (85 экранов, собрано из кода OpenXcom).
 
-**Таблицы правил** (`RULES.PAK`, `Core/Rules.cs` + `Core/RulesSchema.cs`):
+**Таблицы правил** (`RULES.PAK`, `tools/oxzconv/lib/rules.js` + `tools/oxzconv/lib/rulesschema.js`):
 схема описывает поля каждой таблицы (тип, умолчание из OpenXcom — 10),
 порядок записей как `sortLists` OpenXcom (craftWeapons — по listOrder
 launcher, armors — по storeItem, ufopaedia — раздел + listOrder, units — по
@@ -267,7 +271,7 @@ countries 16 x 13, regions 17/15 x 11, ufos 8 x 28, ufopaedia 133/127 x 24.
 `ArticleStateArmor` (`ArmorImage`, поиск ресурса через `ResIds.Find`);
 `textWidth` у TFTD по умолчанию 157.
 
-Проверка: `OxzConv.exe dump <OXZ\игра> [таблица [число]]` — ресурсы пакетов
+Проверка: `node tools/oxzconv/oxzconv.js dump <OXZ/игра> [таблица [число]]` — ресурсы пакетов
 или записи с именами полей, текстом строк и названиями записей по ссылкам.
 
 Координаты глобуса (2026-09-14) — двоичные углы: поле `lon` — u16
@@ -285,7 +289,7 @@ fuel, damage; u8 n, {u16 craftWeapon, u16 ammo}·n; u8 n, {u16 item, u16
 qty}·n; u8 n, {u16 item, i16 ammo}·n}·n` (оружие, трюм и техника кораблей);
 `u16 n, {u16 item, u16 count}·n`. TFTD — 230 байт.
 
-**Имена солдат** (`NAMES` #0022 в `LANG.PAK`, `Core/Names.cs`): пулы
+**Имена солдат** (`NAMES` #0022 в `LANG.PAK`, `tools/oxzconv/lib/names.js`): пулы
 `common/SoldierName/*.nam` OpenXcom (как `SoldierNamePool`): `u8 n; u16
 offs[n]`; пул — `u8 cnt[4]` (maleFirst, femaleFirst, maleLast, femaleLast),
 затем строки подряд с нулём в конце. Нет женских — берутся мужские. 33 пула,
@@ -310,7 +314,7 @@ RuleMissionScript; `varIndex` — номер имени в отсортиров�
 `sortRank`; `crafts` — `radarChance`. В vars после `difficultyCoefficient` —
 `i32 defeatScore, defeatFunds`.
 
-**WORLDMAP** (`#0144`, GEO.PAK; `Core/WorldMap.cs`) — маска полигонов WORLD.DAT для
+**WORLDMAP** (`#0144`, GEO.PAK; `tools/oxzconv/lib/worldmap.js`) — маска полигонов WORLD.DAT для
 `insideLand` и текстуры места высадки без тригонометрии на Z80. Точка проверяется
 портом `Globe::getPolygonFromLonLat` (первый содержащий полигон; в UFO полигоны —
 суша, в TFTD — вода). Растр 1° (180 x 360 ниббл: текстура 0..13, 14 — граница,
@@ -318,7 +322,7 @@ RuleMissionScript; `varIndex` — номер имени в отсортиров�
 текстура), `rowStart[180]` — граничных до строки. TFTD 7484 граничных клеток, 98 КБ;
 UFO 6770, 91 КБ. Движок — `world_texture` (`src/geoscape/earth/geo.c`).
 
-**GLOBE** (`#0145`, GEO.PAK; `Core/Globe.cs`, v4 2026-09-15) — плоская карта глобуса для
+**GLOBE** (`#0145`, GEO.PAK; `tools/oxzconv/lib/globe.js`, v4 2026-09-15) — плоская карта глобуса для
 рендера М4в (globe.md §5.4, src/geoscape/earth/globe.c, globe_s.s). Многоугольники WORLD.DAT
 перекрываются (OpenXcom рисует их по порядку, поздний сверху) и стыкуются с T-стыками;
 конвертер решает это заранее: (1) исходные вершины ближе 3·10⁻⁴ рад к чужому ребру (дуге

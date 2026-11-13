@@ -510,13 +510,13 @@ static uint8_t mus_pick(uint8_t grp)           // Mod::getRandomMusic
 | Чего нет | Что из-за этого | Где смотреть |
 |---|---|---|
 | **Состав групп `GMGEO`/`GMINTER`** — таблицы групп конвертер не выдаёт | §5.1 зашита в `music.c`; мод состав не изменит | `18 §6.2` |
-| **`normalization` из `music.rul`** игнорируется (`OxzConv/Core/Music.cs:63` — всегда `vol = 127`) | треки заметно разной громкости; `GMGEO1` и `GMLOSE` будут звучать по-разному | `18 §6.8` |
+| **`normalization` из `music.rul`** игнорируется (`tools/oxzconv/lib/music.js:63` — всегда `vol = 127`) | треки заметно разной громкости; `GMGEO1` и `GMLOSE` будут звучать по-разному | `18 §6.8` |
 | **Музыка боя из правил**: `briefing.music` и `music:` развёртываний, `music:` террейнов, `goodDebriefingMusic`/`badDebriefingMusic` из `vars.rul` | §4.6 держится на зашитой `mus_kind`; TFTD не сможет выбирать `GMTACWET`/`GMTACDRY` по террейну | `09 §7`: «Ещё не в таблицах: развёртывания для боя, terrains…»; `19 §2.3` |
 | **`MUSIC.PAK` не подключён**: нет ни в `$packs` (`tools/build.ps1:57`), ни в списке SD (`src/kernel/sdres.c:19-23`, `NPACKS 6`) | треков движку не видно | [20 §12.1](20_music_player.md) |
 | **Дубль `GMINTER0` = `GMISPOSH`** в TFTD (22 потока на 23 типа) | жребий `MG_INTER` может промахнуться мимо ресурса | `18 §6.3` |
 
 **Точка зацикливания уже есть**: `loop_offset` в заголовке ресурса `MUSIC`
-(`OxzConv/Core/Music.cs:10,350-366`, формат — [20 §2.1](20_music_player.md)), и
+(`tools/oxzconv/lib/music.js:10,350-366`, формат — [20 §2.1](20_music_player.md)), и
 он задан у всех 14 треков UFO и всех 22 треков TFTD (`18 §1.5`). Открытым
 остаётся только вопрос политики: зацикливать ли `GMWIN`/`GMLOSE`/`GMSTORY`
 (§8.1).

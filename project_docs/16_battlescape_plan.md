@@ -186,7 +186,7 @@
   `loftempsSet` — **нет**), `units` (`stats`, `intelligence`, `aggression`,
   `energyRecovery`, `specab`, `spawnUnit`, `meleeWeapon`), `soldiers`,
   `alienRaces`, `invs` (сетка), `alienDeployments` (только геоскейп-поля)
-  — `Core/RulesSchema.cs`.
+  — `tools/oxzconv/lib/rulesschema.js`.
 
 Нет — это и есть работа по конвертеру:
 
@@ -661,7 +661,7 @@ idx = loftID[(voxel.z % 24)/2]*16 + y; hit = data[idx] & (1 << x)`.
 Сделано (2026-09-21): клавиша `K` и кнопка панели на месте оригинала (112, 160),
 расход единиц времени, вставание перед шагом. Конвертер теперь кладёт в лист брони
 **40 кадров** вместо 32: 0-7 левая рука, 8-15 правая, 16-23 ноги стоя, 24-31 торс,
-32-39 ноги на колене (`OxzConv/Core/BattleData.cs`). Влияния на видимость и меткость
+32-39 ноги на колене (`tools/oxzconv/lib/battledata.js`). Влияния на видимость и меткость
 пока нет — это вместе со стрельбой.
 
 ### 5.5 Стрельба, точность, броски

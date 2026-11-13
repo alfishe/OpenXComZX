@@ -100,7 +100,7 @@ function decode(buf, base, size) {
 }
 
 // ---------------------------------------------------------------- отчёт
-const typeList = fs.readFileSync('OxzConv/Data/music_types.txt', 'utf8').split(/\r?\n/)
+const typeList = fs.readFileSync('tools/oxzconv/data/music_types.txt', 'utf8').split(/\r?\n/)
   .map(s => s.replace(/#.*$/, '').trim()).filter(Boolean);
 const typeName = new Map(typeList.map((t, i) => [0x300 + i, t]));
 

@@ -8,7 +8,7 @@
 Всё, что ниже, относится к **типу** музыки (`GMGEO1`, `GMINTER`, …) — имени
 записи `musics:` в `music.rul`. Тип ≠ файл: у типа есть `name` (имя файла для
 ogg/mp3) и `catPos` (номер трека в `SOUND/ADLIB.CAT`). У нас тип → номер строки
-в `OxzConv/Data/music_types.txt`, ресурс `MUSIC` = `#0300 + номер`
+в `tools/oxzconv/data/music_types.txt`, ресурс `MUSIC` = `#0300 + номер`
 (`09_converter.md` §7).
 
 ---
@@ -151,8 +151,8 @@ _states.back()->init(); }`), а `_init` сбрасывается в `setState`
   (`Engine/Options.cpp:142`).
 
 **Факт по нашим данным:** конвертер прогоняет тот же плеер офлайн и помечает
-точку повтора (`OxzConv/Core/Music.cs:350-366`, поле `loop_offset` в заголовке
-`MUSIC`, `OxzConv/Core/Music.cs:10`). Прогон `tmp/sd/OXZ/*/MUSIC.PAK`
+точку повтора (`tools/oxzconv/lib/music.js:350-366`, поле `loop_offset` в заголовке
+`MUSIC`, `tools/oxzconv/lib/music.js:10`). Прогон `tmp/sd/OXZ/*/MUSIC.PAK`
 показывает: **у всех 14 треков UFO и всех 22 треков TFTD `loop_offset`
 задан** — ни один не заканчивается `0xFF`. Точка повтора — кадр 1 (кадр 0
 хранит разовую инициализацию OPL3). Длина одного прохода:
@@ -351,7 +351,7 @@ _states.back()->init(); }`), а `_init` сбрасывается в `setState`
 
 ## 5. Отображение на экраны порта
 
-Экраны — `src/common/screens.h`, типы музыки — `OxzConv/Data/music_types.txt`
+Экраны — `src/common/screens.h`, типы музыки — `tools/oxzconv/data/music_types.txt`
 (ресурс `#0300 + номер`).
 
 | Экран порта | Музыка |
@@ -407,7 +407,7 @@ _states.back()->init(); }`), а `_init` сбрасывается в `setState`
    `normalization` (0.74…1.19), в ADLIB-плеере это множитель общей громкости:
    `AdlibMusic.cpp:42` (`_volume = volume`) и `:128`
    (`func_set_music_volume(127 * _volume)`). Наш конвертер всегда берёт
-   `vol = 127` (`OxzConv/Core/Music.cs:63`) — поле `normalization` игнорируется,
+   `vol = 127` (`tools/oxzconv/lib/music.js:63`) — поле `normalization` игнорируется,
    треки будут разной громкости. Решить: учитывать при конвертации (проще) или
    хранить множитель у ресурса.
 9. **Смена трека без щелчка.** `Music::play` = «оборвать и начать». На OPL3

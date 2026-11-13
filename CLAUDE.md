@@ -57,12 +57,10 @@
   дамп страниц (`project_docs/12_game_state.md`). Не держать указатели в `ST`
   через смену Win3, не делать `ST` приёмником `far_read`/`str_copy`.
 - Приоритет — X-COM: Terror from the Deep, но всё универсально для UFO и
-  TFTD (как OpenXcom). Конвертер данных — C#, .NET Framework 4.8, один exe
-  (`OxzConv`, сборка `powershell -File tools\dotnet.ps1 build
-  OxzConv\OxzConv.csproj -c Release`, запуск
-  `tmp\oxzconv\bin\Release\OxzConv.exe --game <каталог игры> --out tmp\sd
-  --preview tmp\preview`; `project_docs/09_converter.md`). Проверять на обеих
-  играх из `Steam/`. dotnet — только через `tools/dotnet.ps1` (кэши в tmp/).
+  TFTD (как OpenXcom). Конвертер данных — Node.js (`tools/oxzconv`, запуск
+  `node tools/oxzconv/oxzconv.js --game <каталог игры> --out tmp/sd
+  --preview tmp/preview`; `project_docs/09_converter.md`). Проверять на обеих
+  играх из `Steam/`.
 - Звук: 4 режима, выбор в настройках (`project_docs/11_sound.md`).
 - Не править текстовые файлы через PowerShell `Get-Content`/`Set-Content`
   (PS 5.1 портит UTF-8 без BOM) — только инструментами Edit/Write.

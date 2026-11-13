@@ -1,4 +1,4 @@
-// Проверка точки цикла: порт плеера OxzConv/Core/Music.cs (он же adlplayer.cpp) в JS,
+// Проверка точки цикла: порт плеера tools/oxzconv/lib/music.js (он же adlplayer.cpp) в JS,
 // прогон трека на ДВА прохода и сравнение второго прохода с первым.
 // Отвечает на вопросы 22_music_data.md §2: совпадает ли тело цикла с первым проходом,
 // сколько записей надо дописать при прыжке (ресинк), и как это меняет размер потока.
@@ -285,7 +285,7 @@ function deltaEncode(frames, from, to, state) {
 const streamBytes = fr => fr.reduce((a, w) => a + (w.length ? 2 + w.length * 2 : 0), 0) +
   fr.filter((w, i) => !w.length && (i === 0 || fr[i - 1].length)).length;   // грубо: 1 байт на серию пауз
 
-console.log('Плеер портирован из OxzConv/Core/Music.cs; прогон 2 проходов каждого трека.\n');
+console.log('Плеер портирован из tools/oxzconv/lib/music.js; прогон 2 проходов каждого трека.\n');
 console.log('игра трек       кадр1  кадрL1  кадрL2  длина1  длина2  расхождение_проход2                ресинк_рег  дельта1_Б  дельта2_Б');
 const rows = [];
 for (const [game, cat, rul] of GAMES) {

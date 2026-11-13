@@ -75,9 +75,10 @@ Deep; в конце — то же на UFO Defense. Снимки делает `t
 - **SDCC 4.5.0** (`sdcc`, `sdasz80`) — ровно эта версия: код обходит её ошибки
   кодогенерации; на macOS и Linux её собирает `tools/setup_unix.sh` (в `tmp/toolchain`);
 - **CMake** ≥ 3.20 и **Ninja** (на Windows подойдут и те, что ставит Visual Studio);
-- **Node.js** — скрипты сборки и проверки;
-- **.NET** — конвертер данных `OxzConv` (C#): .NET Framework 4.8 на Windows, .NET 10
-  на macOS/Linux; **PowerShell** (`pwsh` вне Windows); вне Windows для образа карты — **mtools**;
+- **Node.js** — скрипты сборки и конвертер данных (`tools/oxzconv`); ему нужны правила,
+  строки и шрифты OpenXcom в `REF/OpenXcom` (клон `github.com/OpenXcom/OpenXcom`,
+  `tools/setup_unix.sh` делает его сам); **PowerShell** (`pwsh` вне Windows); вне Windows
+  для образа карты — **mtools**;
 - своя копия **X-COM: UFO Defense** или **Terror from the Deep** — данные игры, они не
   распространяются (`-GameDir <папка с GEODATA>`);
 - эмулятор с TS-Config: **Unreal Speccy** (`unreal/`, автотесты) или **unreal-ng**
@@ -122,7 +123,7 @@ DMA BLT2, а его нет в обычной сборке с IDE. На тако�
 | `src/common/` | интерфейс, общий для геоскейпа и боя: виджеты, меню, Уфопедия |
 | `src/geoscape/` | кампания: время, месяц, сохранение; `earth/` — глобус, окна геоскейпа, НЛО и корабли; `base/` — базы, лаборатория, производство, экономика, инвентарь |
 | `src/battlescape/` | наземный бой: генератор карты, отрисовка, бойцы, поиск пути, двери |
-| `OxzConv/` | конвертер данных игры в формат порта (C#) |
+| `tools/oxzconv/` | конвертер данных игры в формат порта (Node.js) |
 | `tools/` | сборка, запуск, тесты, замеры, вспомогательные скрипты |
 | `tests/` | сценарии автотестов |
 | `project_docs/` | вся проектная документация — [оглавление](project_docs/README.md) |

@@ -29,9 +29,9 @@ ini эмулятора `tmp/build/oxz.ini`, метки `tmp/build/oxz.labels`.
 (`oxz.ihx`, `oxz.map`, `oxz.labels`; в SPG — кроме даты и времени заголовка,
 воспроизводимый заголовок — `SOURCE_DATE_EPOCH`).
 
-1. Конвертер `OxzConv` пересобирается, если изменились его исходники
-   (`tools/dotnet.ps1`); данные игры (`tmp/sd/OXZ/<игра>`) конвертируются
-   (`cmake/convert.cmake`), если их нет или конвертер новее; `OxzConv headers` →
+1. Данные игры (`tmp/sd/OXZ/<игра>`) конвертируются конвертером на Node
+   (`tools/oxzconv`, `cmake/convert.cmake`), если их нет или исходники конвертера
+   новее; `oxzconv.js headers` →
    `tmp/build/gen/*.h`. Карта (`tools/dist.ps1 -NoBuild` → `distr/`, `oxz_card.img`) —
    цель `card`, когда изменились данные.
 2. `tmp/build/banks.s` (таблица «банк → страница», пишется при configure и только при

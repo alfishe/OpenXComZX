@@ -9,7 +9,7 @@
 ход боя и экраны — [16](16_battlescape_plan.md).
 
 Все утверждения — со ссылкой `файл:строка` в `REF/`. Номера типов музыки для
-порта — строки `OxzConv/Data/music_types.txt`, ресурс = `#0300 + номер`.
+порта — строки `tools/oxzconv/data/music_types.txt`, ресурс = `#0300 + номер`.
 
 Главный вывод: **внутри боя музыка не меняется никогда**. Тема выбирается один
 раз при генерации карты и играет до конца этапа; все события боя (ходы,
@@ -333,7 +333,7 @@ playMusic(_positiveScore ? Mod::DEBRIEF_MUSIC_GOOD : Mod::DEBRIEF_MUSIC_BAD);
 | Провал финальной миссии / отступление с неё | `GMLOSE` | `GMLOSE` | `BattlescapeState.cpp:2064-2068`, `cutscenes.rul` |
 | Возврат на геоскейп | `GMGEO` (случайный из `GMGEO1..10`) | то же | `GeoscapeState.cpp:521-525` ([18](18_music_events.md)) |
 
-Все перечисленные типы уже есть в `OxzConv/Data/music_types.txt`:
+Все перечисленные типы уже есть в `tools/oxzconv/data/music_types.txt`:
 `GMDEFEND`, `GMENBASE`, `GMNEWMAR`, `GMTACTIC`, `GMMARS`, `GMWIN`, `GMLOSE`
 (UFO); `GMISPOSH`, `GMATTBAS`, `GMDEFBAS`, `GMBIGMAR`, `GMSIG`, `GMTACWET`,
 `GMTACDRY`, `GMDEBGOO`, `GMDEBPOR` (TFTD).
