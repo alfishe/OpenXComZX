@@ -19,13 +19,15 @@
 # сам build.ps1, когда данные конвертера новее образа.
 # Сообщения — латиницей: PS 5.1 читает этот файл как ANSI и портит кириллицу в конвейере.
 param([switch]$NoBuild)
+$onWindows = ($PSVersionTable.PSEdition -eq 'Desktop') -or $IsWindows
+$psExe = if ($onWindows) { 'powershell' } else { 'pwsh' }
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 $dist = Join-Path $root 'distr'
 $img = Join-Path $root 'oxz_card.img'
-$sd = Join-Path $root 'tmp\sd\OXZ'
-$wc = Join-Path $root 'unreal\soft\WC\exe'
-$robimg = Join-Path $root 'unreal\tools\robimg\robimg.exe'
+$sd = Join-Path $root 'tmp/sd/OXZ'
+$wc = Join-Path $root 'unreal/soft/WC/exe'
+$robimg = Join-Path $root 'unreal/tools/robimg/robimg.exe'
 # Пакеты, которые игра читает с карты (sdres.c pack_name + music.c + globe_view.s)
 $packs = @('BACK', 'UFOP', 'ITEMS', 'CUTS', 'BATUI', 'BATTLE', 'MAPS', 'TILES', 'UNITS',
            'MUSIC', 'MUSICAY', 'MUSICFM', 'GVIEW')
@@ -33,9 +35,9 @@ $packs = @('BACK', 'UFOP', 'ITEMS', 'CUTS', 'BATUI', 'BATTLE', 'MAPS', 'TILES', 
 function Build-Game($game, $out) {
     Write-Host "build $game ..."
     # -NoCard: не собирать образ на каждую игру — он собирается один раз в конце
-    & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $root 'tools\build.ps1') -Game $game -NoCard > $null
+    & $psExe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $root 'tools/build.ps1') -Game $game -NoCard > $null
     if ($LASTEXITCODE -ne 0) { throw "build $game failed" }
-    Copy-Item (Join-Path $root 'tmp\build\oxz.spg') $out -Force
+    Copy-Item (Join-Path $root 'tmp/build/oxz.spg') $out -Force
 }
 
 New-Item -ItemType Directory -Force $dist | Out-Null
@@ -50,19 +52,25 @@ if (-not $NoBuild) {
 
 # Данные обеих игр (папка игры чистится: устаревших пакетов на карте быть не должно)
 foreach ($g in @('TFTD', 'UFO')) {
-    $to = Join-Path $dist "OXZ\$g"
+    $to = Join-Path $dist "OXZ/$g"
     Remove-Item $to -Recurse -ErrorAction SilentlyContinue
     New-Item -ItemType Directory -Force $to | Out-Null
     foreach ($p in $packs) {
-        $f = Join-Path $sd "$g\$p.PAK"
-        if (Test-Path $f) { Copy-Item $f $to -Force } else { Write-Host "  no $g\$p.PAK" }
+        $f = Join-Path $sd "$g/$p.PAK"
+        if (Test-Path $f) { Copy-Item $f $to -Force } else { Write-Host "  no $g/$p.PAK" }
     }
 }
 
 # Загрузчик WC: без demo (44 МБ чужих демок) и без soft (текстовый процессор в SCL) — карте не нужны
-foreach ($n in @('boot.$C', 'Help.txt')) { Copy-Item (Join-Path $wc $n) $dist -Force }
-Copy-Item (Join-Path $wc 'WC') $dist -Recurse -Force
-Copy-Item (Join-Path $root 'tools\dist_readme.txt') (Join-Path $dist 'README.TXT') -Force
+# (unreal/ is a separate checkout: without it the card has no loader. Fine for the emulator,
+# which starts the game from the snapshot, but such a card does not boot on hardware.)
+if (Test-Path $wc) {
+    foreach ($n in @('boot.$C', 'Help.txt')) { Copy-Item (Join-Path $wc $n) $dist -Force }
+    Copy-Item (Join-Path $wc 'WC') $dist -Recurse -Force
+} else {
+    Write-Host "  no Wild Commander ($wc): the card will not boot on hardware"
+}
+Copy-Item (Join-Path $root 'tools/dist_readme.txt') (Join-Path $dist 'README.TXT') -Force
 
 $mb = [int]((Get-ChildItem $dist -Recurse -File | Measure-Object Length -Sum).Sum / 1MB)
 Write-Host "distr: $mb MB"
@@ -74,7 +82,23 @@ Write-Host "distr: $mb MB"
 # получается только на объёме от 128 МБ при кластере 1 КБ или от 256 МБ при 2 КБ;
 # 256 МБ при 4 КБ — ровно на границе: «Format ... Error e» и код возврата 0.
 Remove-Item $img -ErrorAction SilentlyContinue
-& $robimg "-p=$img" -s=262144 -o=2048 -f=0 | Out-Null
-& $robimg "-p=$img" -a=1 "-C=$dist" | Out-Null
-if (-not (Test-Path $img)) { throw 'robimg failed' }
+if ($onWindows) {
+    & $robimg "-p=$img" -s=262144 -o=2048 -f=0 | Out-Null
+    & $robimg "-p=$img" -a=1 "-C=$dist" | Out-Null
+    if (-not (Test-Path $img)) { throw 'robimg failed' }
+} else {
+    # macOS / Linux: the same layout without robimg. tools/mkmbr.js writes the MBR (one
+    # FAT32 LBA partition from sector 2048 = 1 MB), mtools formats and fills the partition:
+    # FAT32 forced (-F), cluster 4 sectors = 2 KB (-c 4), 2048 hidden sectors (-H).
+    $IMG_MB = 256; $PART_FIRST = 2048; $SECTOR_BYTES = 512; $CLUSTER_SECTORS = 4
+    $sectors = & node (Join-Path $root 'tools/mkmbr.js') $img $IMG_MB $PART_FIRST
+    if ($LASTEXITCODE -ne 0) { throw 'mkmbr failed' }
+    $env:MTOOLS_SKIP_CHECK = '1'
+    $part = "$img@@$($PART_FIRST * $SECTOR_BYTES)"
+    & mformat -i $part -F -c $CLUSTER_SECTORS -T $sectors -h 255 -s 63 -H $PART_FIRST -v OXZ '::'
+    if ($LASTEXITCODE -ne 0) { throw 'mformat failed (brew install mtools)' }
+    $items = @(Get-ChildItem $dist | ForEach-Object { $_.FullName })
+    & mcopy -s -m -n -i $part @items '::/'
+    if ($LASTEXITCODE -ne 0) { throw 'mcopy failed' }
+}
 Write-Host "card image: $img"

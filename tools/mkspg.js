@@ -6,12 +6,15 @@
 //
 // node mkspg.js <in.ihx> <out.spg> --pc 0x7FF0 --sp 0x3E00
 //     --win 0:0x04 --win 1:0x05 [--bank 1:0x30]... [--win3 0x0F] [--clk 0]
-//     [--data <page>:<file>]...
+//     [--data <page>:<file>]... [--data-list <file>]
 //
 // --win W:P  — адреса окна W (#0000/#4000/#8000/#C000) кладутся в страницу P.
 // --bank N:P — банк кода N (виртуальные адреса N*#10000+#8000..#BFFF,
 //              -Wl-bBANKn линкера) кладётся в страницу P.
 // --data P:F — файл F целиком в страницы P, P+1, ... (по 16 КБ).
+// --data-list L — то же построчно из файла L (строки «P:F»; пишет tools/mkpacks.js).
+// Дата и время в заголовке — сейчас или SOURCE_DATE_EPOCH (секунды; воспроизводимая
+// сборка: два SPG одной сборки сравниваются байт в байт).
 'use strict';
 const fs = require('fs');
 
@@ -22,6 +25,7 @@ const args = process.argv.slice(2);
 if (args.length < 2) die('usage: mkspg.js in.ihx out.spg --pc A --sp A --win W:P ...');
 const [inFile, outFile] = args;
 const opt = { pc: null, sp: null, win: {}, bank: {}, win3: 0x0F, clk: 0, data: [] };
+function addData(v) { const k = v.indexOf(':'); opt.data.push({ page: num(v.slice(0, k)), file: v.slice(k + 1) }); }
 for (let i = 2; i < args.length; i++) {
 	const a = args[i], v = args[++i];
 	if (v === undefined) die('missing value for ' + a);
@@ -31,7 +35,8 @@ for (let i = 2; i < args.length; i++) {
 	else if (a === '--clk') opt.clk = num(v);
 	else if (a === '--win') { const [w, p] = v.split(':'); opt.win[num(w)] = num(p); }
 	else if (a === '--bank') { const [n, p] = v.split(':'); opt.bank[num(n)] = num(p); }
-	else if (a === '--data') { const k = v.indexOf(':'); opt.data.push({ page: num(v.slice(0, k)), file: v.slice(k + 1) }); }
+	else if (a === '--data') addData(v);
+	else if (a === '--data-list') fs.readFileSync(v, 'utf8').split(/\r?\n/).filter(l => l.trim()).forEach(addData);
 	else die('unknown option ' + a);
 }
 if (opt.pc === null || opt.sp === null) die('--pc and --sp are required');
@@ -102,7 +107,8 @@ if (blocks.length > 256) die('too many blocks');
 
 // --- заголовок 1024 байта
 const hdr = Buffer.alloc(1024);
-const now = new Date();
+const MS_PER_SECOND = 1000;
+const now = process.env.SOURCE_DATE_EPOCH ? new Date(num(process.env.SOURCE_DATE_EPOCH) * MS_PER_SECOND) : new Date();
 hdr.write('OpenXComZX'.padEnd(32), 0, 'latin1');
 hdr.write('SpectrumProg', 32, 'latin1');
 hdr[44] = 0x10;

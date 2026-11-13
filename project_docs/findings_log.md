@@ -1450,6 +1450,29 @@
 
 ## 2026-11-13
 
+- **Сборка на macOS и переход на CMake.** Подробности — 01 §«Сборка на macOS», 07 §2.
+  - SDCC — ровно 4.5.0 из исходников (`tools/setup_unix.sh`, `tmp/toolchain/sdcc-4.5.0`):
+    в Homebrew 4.6, обходы ошибок 4.5 на ней не проверены. Сборка SDCC с
+    `CPPFLAGS=-I/opt/homebrew/include` падала на `isl/version.h` — подключать только boost.
+  - OxzConv вне Windows — `net10.0` (apphost); Homebrew-овский `dotnet` — скрипт, apphost без
+    `DOTNET_ROOT` ищет .NET в `/usr/local/share/dotnet` и находит там старый 6.0 — корень берётся
+    из `dotnet --list-runtimes`.
+  - Образ карты вне Windows — `tools/mkmbr.js` (MBR, раздел 0x0C с сектора 2048) + mtools
+    `mformat -F -c 4` по смещению раздела (`mpartition` не справился). unreal-ng предупреждает,
+    что TS-BIOS с образа с MBR может не загрузиться; запуск SPG снапшотом это не задевает —
+    `fat.c` разбирает MBR сам.
+  - Сборка медленная была из-за последовательной компиляции ~70 файлов. Теперь её описывает
+    `CMakeLists.txt` (Ninja, по шагу на файл, depfile `sdcc -MMD`), `tools/build.ps1` —
+    обёртка с прежними ключами. Проверено: `oxz.ihx`, `oxz.map`, `oxz.labels` совпадают с
+    прежней сборкой байт в байт, SPG — кроме даты и времени заголовка (`SOURCE_DATE_EPOCH`
+    делает его воспроизводимым, `tools/mkspg.js`); холостая сборка — «no work to do»; правка
+    одного `.c` пересобирает его и компоновку, правка `memmap.h` — 39 зависящих файлов.
+  - Грабли переноса: адреса банков в аргументах компоновщика попадают в `oxz.map` как есть —
+    `math(OUTPUT_FORMAT HEXADECIMAL)` даёт строчные цифры, прежняя сборка — прописные
+    (`oxz_hex`). Имя списка пакетов для mkspg не должно совпадать с листингом sdasz80
+    (`packs.lst`) — отсюда `packs.data`.
+  - Проверка в unreal-ng (модель TSL) — `tools/run_ung.ps1` через WebAPI: TFTD грузится снапшотом и показывает вступительный ролик, UFO — главное меню
+    (`tmp/shots/ung/`).
 - **Прошивка без DMA BLT2 — игра не запускается, окно SCR_HWINFO.** Глобус (`globe_s.s`:
   `eg_ssub`, `eg_sw3` и др.) рисуется DMA BLT2 (`0x46` — `DMA_BLT2 | DMA_OPT`) с опросом
   `DMAStatus`. По RTL (zx-evo-tsconf `fpga/current`) BLT2 есть только в сборках с `XTR_FEAT`:
@@ -1461,4 +1484,6 @@
   6/7 — VDAC2. Палитра на обычной прошивке уже поддержана (`gfx.c`, `pwm`), не работает только BLT2.
   Теперь `boot.c` при VDAC_VER = 0 вместо заставки и меню открывает окно `SCR_HWINFO` (банк 2,
   `scr_menu.c`) без кнопок: что не так, какая прошивка нужна (VDAC или VDAC2) и `TS_VDAC=5BIT`
-  для эмулятора; дальше игра не идёт.
+  для эмулятора; дальше игра не идёт. unreal-ng повторяет RTL: BLT2 только при `TS_VDAC` ≠ NONE
+  (`portdecoder_tsconf.cpp`: `SetBlt2Built(... || ts_vdac != 0)`), в его `configs/ts-conf/unreal.ini`
+  по умолчанию `TS_VDAC=NONE` — для игры нужна копия с `TS_VDAC=5BIT` (01).

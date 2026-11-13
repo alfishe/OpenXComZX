@@ -177,7 +177,7 @@ mao_l:
 	jr	nz, mao_l
 	ret
 
-	.area	_MUSIC			; база -Wl-b_MUSIC=0x2800 (tools/build.ps1)
+	.area	_MUSIC			; база -Wl-b_MUSIC=0x2800 (CMakeLists.txt)
 _mus_ring::	.ds	RING_SIZE	; кольцо записей
 _mus_rd::	.ds	2		; указатель чтения — только ISR
 _mus_pause::	.ds	1		; осталось кадров паузы — только ISR

@@ -69,19 +69,27 @@ Deep; в конце — то же на UFO Defense. Снимки делает `t
 
 ## Сборка
 
-Нужны:
+Сборка — CMake + Ninja (`CMakeLists.txt`), `tools/build.ps1` — обёртка над ними; работает
+на Windows, macOS и Linux. Нужны:
 
-- **SDCC 4.5** (`sdcc`, `sdasz80`, `sdldz80` в `PATH`);
+- **SDCC 4.5.0** (`sdcc`, `sdasz80`) — ровно эта версия: код обходит её ошибки
+  кодогенерации; на macOS и Linux её собирает `tools/setup_unix.sh` (в `tmp/toolchain`);
+- **CMake** ≥ 3.20 и **Ninja** (на Windows подойдут и те, что ставит Visual Studio);
 - **Node.js** — скрипты сборки и проверки;
-- **.NET Framework 4.8** — конвертер данных `OxzConv` (C#);
-- копия **X-COM: UFO Defense** или **Terror from the Deep** (например, из Steam)
-  в каталоге `Steam/` — данные игры, они не распространяются;
-- эмулятор **Unreal Speccy** с поддержкой TS-Config — для запуска и тестов.
+- **.NET** — конвертер данных `OxzConv` (C#): .NET Framework 4.8 на Windows, .NET 10
+  на macOS/Linux; **PowerShell** (`pwsh` вне Windows); вне Windows для образа карты — **mtools**;
+- своя копия **X-COM: UFO Defense** или **Terror from the Deep** — данные игры, они не
+  распространяются (`-GameDir <папка с GEODATA>`);
+- эмулятор с TS-Config: **Unreal Speccy** (`unreal/`, автотесты) или **unreal-ng**
+  (`tools/run_ung.ps1`), в обоих — `TS_VDAC=5BIT`.
 
 ```powershell
 powershell -File tools\build.ps1              # TFTD (по умолчанию)
 powershell -File tools\build.ps1 -Game UFO    # UFO
+pwsh tools/build.ps1 -Game UFO -GameDir <папка игры>   # macOS / Linux
 ```
+
+Пересобираются только изменённые файлы, независимые — параллельно.
 
 Сборка собирает ядро и банки, гоняет проверки раскладки памяти, конвертирует данные
 игры и делает образ SD-карты. Результат — `tmp\build\oxz.spg`.
@@ -102,6 +110,10 @@ powershell -File tools\readme_shots.ps1       # снимки для этой с�
 Карта — один раздел **FAT32** (с FAT16 TS-BIOS не грузится), содержимое `distr\` —
 в корень. Подробно — [project_docs/23_distribution.md](project_docs/23_distribution.md).
 
+Нужна прошивка TS-Config **с VDAC или VDAC2** (STATUS VDAC_VER ≠ 0): глобус рисуется
+DMA BLT2, а его нет в обычной сборке с IDE. На такой прошивке игра не запускается и
+объясняет, какая нужна.
+
 ## Из чего состоит
 
 | Каталог | Что внутри |
@@ -115,7 +127,7 @@ powershell -File tools\readme_shots.ps1       # снимки для этой с�
 | `tests/` | сценарии автотестов |
 | `project_docs/` | вся проектная документация — [оглавление](project_docs/README.md) |
 
-Код на C собирается в банки по 16 КБ (`tools\build.ps1`, массив `$banks`),
+Код на C собирается в банки по 16 КБ (`CMakeLists.txt`, вызовы `oxz_bank()`),
 раскладка памяти описана в [src/map.h](src/map.h) и
 [project_docs/08_ui_port_plan.md](project_docs/08_ui_port_plan.md) §4.
 

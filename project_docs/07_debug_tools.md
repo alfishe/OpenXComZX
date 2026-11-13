@@ -16,31 +16,44 @@ powershell -File tools\run.ps1 -Frames 300 -Shot tmp\shots\x.png        # N ка
 в `tmp/shots` (снимки автотеста интерфейса — отдельно, `tmp/shots/ui/`),
 ini эмулятора `tmp/build/oxz.ini`, метки `tmp/build/oxz.labels`.
 
-## 2. Конвейер сборки (`tools/build.ps1`)
+## 2. Конвейер сборки (`CMakeLists.txt`, обёртка `tools/build.ps1`)
 
-Раскладка памяти — 08 §4.
+Раскладка памяти — 08 §4. С 2026-11-13 сборку описывает `CMakeLists.txt` в корне
+(CMake ≥ 3.20 + Ninja), `tools/build.ps1` — обёртка: настраивает `tmp/build`
+(`-DOXZ_GAME`, `-DOXZ_GAME_DIR`, `-DOXZ_CARD` из `-Game`, `-GameDir`, `-NoCard`) и
+зовёт `cmake --build`. cmake и ninja — из PATH, на Windows также из Visual Studio
+(vswhere). `-Clean` — собрать с нуля, `OXZ_JOBS` — число параллельных задач.
+Каждый исходник — отдельный шаг: пересобираются только изменённые файлы и те, чьи
+заголовки изменились (depfile `sdcc -MMD`), независимые — параллельно. Без изменений
+сборка ничего не делает. Результат совпадает с прежним `build.ps1` байт в байт
+(`oxz.ihx`, `oxz.map`, `oxz.labels`; в SPG — кроме даты и времени заголовка,
+воспроизводимый заголовок — `SOURCE_DATE_EPOCH`).
 
-1. Конвертер `OxzConv` пересобирается, если его исходники новее exe; данные
-   игры (`tmp/sd/OXZ/<игра>`) конвертируются из `Steam\`, если их нет или
-   конвертер новее; `OxzConv headers` → `tmp/build/gen/*.h`.
-2. Генерация `tmp/build/banks.s` (таблица «банк → страница») и `packs.s`
-   (страницы пакетов данных, вшиваемых в SPG с #50).
-3. `sdasz80` — `src/kernel/win0/crt0.s` (первым: задаёт порядок областей),
-   `bank.s`, `dmaq.s`, `dmabuf.s`, `glyph.s`, `banks.s`, `packs.s`.
-4. `sdcc -c` — общие C-модули (`--sdcccall 1 --opt-code-size --std-sdcc11
-   --debug`) и банковые (`--codeseg BANKn --constseg BANKn`).
-   `--debug` код не меняет (размеры областей проверены), даёт `oxz.cdb`.
-5. **`tools/checkasm.js`** — поиск в `.asm` ошибки кодогенерации SDCC 4.5
+1. Конвертер `OxzConv` пересобирается, если изменились его исходники
+   (`tools/dotnet.ps1`); данные игры (`tmp/sd/OXZ/<игра>`) конвертируются
+   (`cmake/convert.cmake`), если их нет или конвертер новее; `OxzConv headers` →
+   `tmp/build/gen/*.h`. Карта (`tools/dist.ps1 -NoBuild` → `distr/`, `oxz_card.img`) —
+   цель `card`, когда изменились данные.
+2. `tmp/build/banks.s` (таблица «банк → страница», пишется при configure и только при
+   изменении) и `packs.s` + `packs.data` (`tools/mkpacks.js`: страницы пакетов,
+   вшиваемых в SPG с #50).
+3. `sdasz80` и `sdcc -c` через `tools/sdccw.js`: печатает вывод, валит шаг на ненулевом
+   коде и на `warning 112` (§7), правит цель depfile на `.rel`, TMPDIR — в
+   `tmp/build/tooltmp`. Порядок компоновки — ассемблер Win0 (`crt0.s` первым: задаёт
+   порядок областей), `banks.s`, `packs.s`, затем банки по таблице `oxz_bank()`.
+   Флаги C — `--sdcccall 1 --opt-code-size --std-sdcc11 --debug`, банковые —
+   `--codeseg BANKn --constseg BANKn`. `--debug` код не меняет, даёт `oxz.cdb`.
+4. **`tools/checkasm.js`** — поиск в `.asm` ошибки кодогенерации SDCC 4.5
    (§7): сборка падает, если место найдено.
-6. Линковка: `--code-loc 0x0100 --data-loc 0x4000 -Wl-b_DMABUF=0x7C00
-   -Wl-b_BANKn=0xn8000 --debug` → `oxz.ihx`, `oxz.map`, `oxz.noi`, `oxz.cdb`.
-7. `tools/checkmap.js` — границы областей и пересечения (sdld молча
+5. Линковка: `--code-loc 0x0100 --data-loc 0x4000 -Wl-b_DMABUF=0x7C00
+   -Wl-b_MUSIC=0x2000 -Wl-b_BANKn=0xn8000 --debug` → `oxz.ihx`, `oxz.map`, `oxz.noi`, `oxz.cdb`.
+6. `tools/checkmap.js` — границы областей и пересечения (sdld молча
    накладывает секции; ловил ошибку порядка областей).
-8. `tools/mkspg.js` — Intel HEX (с записями типа 04) → SPG 1.0: занятые
+7. `tools/mkspg.js` — Intel HEX (с записями типа 04) → SPG 1.0: занятые
    512-байтные секторы группируются в блоки по страницам (окно 0 → #04,
-   окно 1 → #05, банк N → по `--bank`, пакеты — `--data PP:файл`).
+   окно 1 → #05, банк N → по `--bank`, пакеты — `--data-list packs.data`).
    PC = заглушка `#7FE0`.
-9. `tools/mklabels.js` — `.noi` (глобальные символы) + `.cdb` (статические
+8. `tools/mklabels.js` — `.noi` (глобальные символы) + `.cdb` (статические
    функции, имя `модуль$функция`) → метки `PP:AAAA имя`.
 
 ## 3. Запуск (`tools/run.ps1`)

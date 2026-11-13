@@ -11,7 +11,11 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net48</TargetFramework>
+    <!-- Windows: .NET Framework 4.8, single exe. macOS/Linux: .NET (no Framework there);
+         output is OxzConv (apphost) + OxzConv.dll + YamlDotNet.dll. -->
+    <TargetFramework Condition="'$(OS)' == 'Windows_NT'">net48</TargetFramework>
+    <TargetFramework Condition="'$(OS)' != 'Windows_NT'">net10.0</TargetFramework>
+    <RollForward Condition="'$(OS)' != 'Windows_NT'">Major</RollForward>
     <LangVersion>latest</LangVersion>
     <Nullable>disable</Nullable>
     <AssemblyName>OxzConv</AssemblyName>
@@ -25,10 +29,14 @@
   </PropertyGroup>
 
   <!-- YamlDotNet: только для компиляции; в exe вшивается сама DLL (Program.cs, AssemblyResolve) -->
-  <ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
     <PackageReference Include="YamlDotNet" Version="16.3.0" ExcludeAssets="runtime" GeneratePathProperty="true" />
   </ItemGroup>
-  <Target Name="EmbedYamlDotNet" BeforeTargets="PrepareForBuild">
+  <!-- outside Windows: a regular runtime reference, the DLL is copied next to OxzConv.dll -->
+  <ItemGroup Condition="'$(TargetFramework)' != 'net48'">
+    <PackageReference Include="YamlDotNet" Version="16.3.0" />
+  </ItemGroup>
+  <Target Name="EmbedYamlDotNet" BeforeTargets="PrepareForBuild" Condition="'$(TargetFramework)' == 'net48'">
     <ItemGroup>
       <EmbeddedResource Include="$(PkgYamlDotNet)\lib\net47\YamlDotNet.dll" LogicalName="lib/YamlDotNet.dll" />
     </ItemGroup>

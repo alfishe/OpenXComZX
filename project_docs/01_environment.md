@@ -60,6 +60,31 @@ uint8_t f(uint8_t k) { if (k == g) return 0; g = k; return k; }
 
 Собранного эмулятора TS-Config на машине нет.
 
+## Сборка на macOS (добавлена 2026-11-13)
+
+Те же скрипты `tools/*.ps1` работают в `pwsh` 7 на macOS (Apple Silicon проверен): пути в
+них — через `/`, что понимают и Windows PowerShell 5.1, и pwsh.
+
+| Что | На Windows | На macOS |
+|---|---|---|
+| Подготовка | — | `sh tools/setup_unix.sh` (brew: powershell, dotnet, node, mtools, boost, bison, flex; SDCC) |
+| SDCC | 4.5.0 в PATH | **4.5.0 из исходников** в `tmp/toolchain/sdcc-4.5.0` (только порт z80); `CMakeLists.txt` ищет её первой (`find_program` HINTS). В Homebrew — 4.6, обходы ошибок 4.5 на ней не проверены |
+| Конвертер | `net48`, один `OxzConv.exe` | `net10.0` (условие `$(OS)` в `OxzConv.csproj`): `tmp/oxzconv/bin/Release/OxzConv` + `OxzConv.dll` + `YamlDotNet.dll`; `DOTNET_ROOT` `CMakeLists.txt` берёт из `dotnet --list-runtimes` (apphost иначе ищет .NET в `/usr/local/share/dotnet`) |
+| Данные игры | `Steam\…` | то же `Steam/…` или `-GameDir <папка с GEODATA>` |
+| Образ карты | `robimg.exe` (`unreal/tools`) | `tools/mkmbr.js` (MBR: один раздел FAT32 LBA с сектора 2048) + `mformat -F -c 4` + `mcopy` (mtools): та же раскладка — 256 МБ, кластер 2 КБ |
+| Загрузчик WC на карте | `unreal/soft/WC/exe` | то же; без `unreal/` карта собирается без WC (в эмуляторе игра идёт со снапшота, на железе такая карта не загрузится) |
+| Эмулятор | `unreal/` (`run.ps1`, сценарии `.oxs`) | **unreal-ng**, модель TSL: `pwsh tools/run_ung.ps1` (WebAPI: SD в `sd.zc`, SPG, N кадров, снимок). Сценариев `.oxs` в unreal-ng нет. Нужен `TS_VDAC=5BIT` (без VDAC в unreal-ng нет DMA BLT2 — глобус зависает): копия `unreal-qt.app` в `tmp/unreal-ng/` с этой строкой в `Contents/Resources/configs/ts-conf/unreal.ini` (findings_log 2026-11-13) |
+
+`REF/OpenXcom` (ресурсы, вшиваемые в конвертер) на Mac — клон `github.com/OpenXcom/OpenXcom`
+(2026-11-13, `4a4bae5`); его версия может отличаться от копии на Windows.
+
+Данные игры — своя копия оригинала: `-GameDir <папка с GEODATA>` (`build.ps1`) или
+`-DOXZ_GAME_DIR` (CMake).
+
+unreal-ng о карте с MBR при вставке пишет «this SD boot path reads a FAT filesystem directly
+from sector 0, with no MBR support; it likely will not boot here» — это про загрузку TS-BIOS с
+карты; игре со снапшота (`fat.c` разбирает MBR сам) это не мешает.
+
 ### Эмулятор — `unreal/` в корне проекта (положен пользователем 2026-09-14)
 
 Эмулятором занимается пользователь; сюда же будут добавляться отладочные

@@ -154,7 +154,7 @@ for (let n = 0; n < 512; n++) { const q = Math.floor(n * n / 4); lo.push(q & 255
 const asm = [
 	';; Сгенерировано tools/gen_globe_tab.js — не править вручную.',
 	';; Четверти квадратов floor(n^2 / 4), n = 0..511: младшие байты (512), затем старшие (512).',
-	';; Область _GTAB — с границы 256 байт в конце банка 24 (tools/build.ps1).',
+	';; Область _GTAB — с границы 256 байт в конце банка 24 (CMakeLists.txt).',
 	'\t.module globe_sq',
 	'\t.globl\t_gl_sq',
 	'\t.area\t_GTAB',

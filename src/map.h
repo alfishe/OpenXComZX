@@ -6,7 +6,7 @@
 // работы: постоянного номера у них нет, здесь — кто и сколько страниц берёт.
 //
 // Эти значения повторяются в ассемблере и сборке — при смене править вместе:
-//   tools/build.ps1 ($KERNEL_PAGE, $DATA_PAGE, $RES_PAGE, $RES_LAST, таблица $banks),
+//   CMakeLists.txt (KERNEL_PAGE, DATA_PAGE, RES_PAGE, RES_LAST, таблица oxz_bank()),
 //   src/kernel/win0/crt0.s, far.s, pages.s, text.s, src/geoscape/earth/globe.s, globe_sh_s.s (равенства *_PAGE).
 // Подробности — project_docs/08_ui_port_plan.md §4.
 #ifndef MAP_H
@@ -61,7 +61,7 @@
 // Банки кода (Win2): #30–#3F — резидентные, #40–#4F — оверлей режима (одни и те же страницы
 // для геоскейпа и боя, 08 §4.3a). Решение пользователя (2026-09-18): в бою данные геоскейпа не
 // нужны — бою отдаются и оверлейные банки, и страницы GEO.PAK (#60–#7F, перечитывается с SD при
-// возврате), и листы TSU, и задний буфер глобуса в экране (16_battlescape_plan.md §1.3). Номер банка -> страница — таблица $banks в tools/build.ps1.
+// возврате), и листы TSU, и задний буфер глобуса в экране (16_battlescape_plan.md §1.3). Номер банка -> страница — таблица oxz_bank() в CMakeLists.txt.
 #define BANK_PAGE        0x30
 #define BANK_OVL_PAGE    0x40
 #define BANK_LAST        0x4F

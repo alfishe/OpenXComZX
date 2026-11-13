@@ -1,207 +1,47 @@
-# Сборка OpenXComZX: SDCC -> Intel HEX -> проверка map -> SPG (+ пакеты данных) + метки.
-# Раскладка — src/inc/memmap.h, project_docs/08_ui_port_plan.md §4.
-# Все выходные файлы — в tmp\build (правило проекта: артефакты только в tmp\).
-#   powershell -File tools\build.ps1 [-Game TFTD|UFO] [-NoCard]
+# Сборка OpenXComZX — обёртка над CMake + Ninja (CMakeLists.txt в корне: таблица банков,
+# раскладка памяти и все шаги сборки описаны там).
+# Все выходные файлы — в tmp/build (правило проекта: артефакты только в tmp/).
+#   powershell -File tools\build.ps1 [-Game TFTD|UFO] [-NoCard] [-GameDir <game folder>]
+#   pwsh tools/build.ps1 ...                 (macOS/Linux: tools/setup_unix.sh first)
+# -GameDir — the original game folder (with GEODATA), when it is not under Steam/.
 # -NoCard — не трогать карту (oxz_card.img): так зовёт dist.ps1, он соберёт её сам.
-param([string]$Game = 'TFTD', [switch]$NoCard)
+# -Clean — удалить tmp/build и собрать заново.
+# Compile jobs: OXZ_JOBS (default - all cores, as Ninja does).
+param([string]$Game = 'TFTD', [switch]$NoCard, [string]$GameDir = '', [switch]$Clean)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
-$src  = Join-Path $root 'src'
-$out  = Join-Path $root 'tmp\build'
-New-Item -ItemType Directory -Force $out | Out-Null
+$out  = Join-Path $root 'tmp/build'
 
-$KERNEL_PAGE = '0x04'; $DATA_PAGE = '0x05'
-$CODE_LOC = '0x0100'; $CODE_END = '0x2000'   # общий код в Win0 (занято до #1CC7, запас — десятки байт)
-$DATA_LOC = '0x4000'; $DATA_END = '0x7C00'   # данные в Win1
-$DMABUF_LOC = '0x7C00'; $DMABUF_END = '0x7FE0' # буферы DMA (чётная база); #7FE0-#7FF0 — заглушка входа
-$ENTRY = '0x7FE0'; $STACK_TOP = '0x3EF0'   # впритык под векторы IM2 (#3EFB)
-# Кольцо музыки и переменные плеера в Win0 (20 §4): прерывание не переключает окна, и
-# читать кольцо ему неоткуда. Ниже #3010 — стек ядра: в геоскейпе он проседает на два
-# килобайта, до кольца остаётся меньше полутора, поэтому в прерывании стоит сторож
-# (crt0.s, STACK_GUARD). Вынести кольцо в свою страницу — 14 §todo.
-$MUSIC_LOC = '0x2000'; $MUSIC_END = '0x3010'
-$RES_PAGE = 0x50; $RES_LAST = 0xAF          # пакеты данных (memmap.h RES_PAGE..RES_LAST)
+$onWindows = ($PSVersionTable.PSEdition -eq 'Desktop') -or $IsWindows
 
-# Общий код (Win0): ассемблер ядра и C-модули без банка.
-$asm_common = @('kernel\win0\crt0', 'kernel\win0\bank', 'kernel\dmabuf', 'kernel\win0\glyph', 'kernel\win0\mul32', 'kernel\win0\div32', 'kernel\sd', 'kernel\win0\pages', 'kernel\win0\far', 'kernel\win0\res', 'kernel\win0\dbg', 'kernel\win0\input', 'kernel\win0\music_s', 'kernel\win0\scrutil', 'kernel\win0\text')   # crt0 — первым: порядок областей; kernel\win0 — код окна 0; dmabuf (буферы DMA в Win1) и sd (код в банке 12) — ассемблер ядра вне Win0
-$c_common   = @()   # Win0 — только ассемблер (14_todo.md §1.3)
-
-# Банки кода (Win2): номер -> физическая страница и файлы C.
-# Страницы: резидентные #30-#3F, оверлей #40-#4F (08 §4.2, §4.3a).
-$banks = @(
-    @{ n = 1; page = 0x30; files = @('common\ui', 'common\screens') }   # ядро интерфейса + диспетчер экранов
-    @{ n = 2; page = 0x31; files = @('common\scr_menu', 'common\names', 'geoscape\scr_end', 'geoscape\earth\globe_ui', 'geoscape\earth\globe_ui_tab') }   # меню; имена объектов для всех окон; концовки; точки глобуса
-    @{ n = 3; page = 0x32; files = @('geoscape\earth\scr_geo') }
-    @{ n = 4; page = 0x33; files = @('geoscape\earth\scr_geo2', 'geoscape\earth\scr_graph') }
-    @{ n = 5; page = 0x34; files = @('geoscape\base\scr_base') }
-    @{ n = 6; page = 0x35; files = @('geoscape\base\scr_base2') }
-    @{ n = 7; page = 0x36; files = @('geoscape\save', 'geoscape\newgame', 'geoscape\base\econ', 'kernel\bios') }   # bios — только для save.c
-    @{ n = 8; page = 0x37; files = @('geoscape\gtime', 'geoscape\base\lab') }
-    @{ n = 9; page = 0x38; files = @('geoscape\base\scr_lab') }
-    @{ n = 10; page = 0x39; files = @('geoscape\base\scr_craft') }
-    @{ n = 11; page = 0x3A; files = @('kernel\gfx', 'kernel\cursor', 'kernel\boot'); ram = 0xBF00 }   # графика, опрос ввода, запуск; с #BF00 — фон под всплывающими окнами (gfx.c)
-    @{ n = 12; page = 0x3B; files = @('kernel\fat', 'kernel\sdres', 'kernel\music'); ram = 0xBB00 }   # музыка: состояние плеера с #BF00, каталог и кэш SD (sdres.c) — с #BB00
-    @{ n = 13; page = 0x3C; files = @('common\scr_ufop') }
-    @{ n = 14; page = 0x3E; files = @('test\bank_a', 'test\mathtest', 'kernel\sddiag'); ram = 0xB000 }   # служебный: самотест джампера, диагностика SD (с #B000 — её результаты)
-    @{ n = 15; page = 0x3F; files = @('test\bank_b') }
-    @{ n = 16; page = 0x3D; files = @('geoscape\month') }   # конец месяца
-    @{ n = 17; page = 0x40; files = @('geoscape\earth\world', 'geoscape\earth\geo') }   # ГСЧ, регионы, сфера, маска суши
-    @{ n = 18; page = 0x41; files = @('geoscape\earth\alien') }   # стратегия и миссии пришельцев
-    @{ n = 19; page = 0x42; files = @('geoscape\earth\ufo') }     # НЛО, обнаружение, места миссий, базы пришельцев
-    @{ n = 20; page = 0x43; files = @('geoscape\earth\craft') }   # полёты кораблей X-COM
-    @{ n = 21; page = 0x44; files = @('geoscape\earth\scr_fly') }   # окна полёта: перехват, корабль, цель
-    @{ n = 22; page = 0x45; files = @('geoscape\earth\dogfight') }   # воздушный бой: логика
-    @{ n = 23; page = 0x46; files = @('geoscape\earth\scr_dogf') }     # воздушный бой: окна
-    @{ n = 24; page = 0x47; files = @('geoscape\earth\globe', 'geoscape\earth\globe_s', 'geoscape\earth\globe_tab', 'geoscape\earth\globe_sq'); tab = 0xBC00 }   # глобус (globe.md): globe_s.s — асм, globe_sq.s — таблица _GTAB с #BC00
-    @{ n = 25; page = 0x48; files = @('geoscape\earth\globe_sh', 'geoscape\earth\globe_sh_s', 'geoscape\earth\globe_view', 'geoscape\earth\globe_sh_tab'); ram = 0xB800 }   # глобус, банк 25 — ассемблер: тень (globe_sh.s — кадр, globe_sh_s.s — блоки и строки, globe_sh_tab.s — таблицы), предрасчитанные виды (globe_view.s); с #B800 — рабочие таблицы тени
-    @{ n = 26; page = 0x49; files = @('geoscape\earth\globe_det', 'geoscape\earth\globe_det_s'); ram = 0xA800 }   # детали глобуса: линии, подписи, города (globe_det.c; точки и отрезки — globe_det_s.s); с #A800 — рабочая память
-    @{ n = 27; page = 0x4A; files = @('geoscape\base\scr_inv'); ram = 0xB000 }   # инвентарь бойца (экипировка перед вылетом); с #B000 — точки под несомым предметом
-    @{ n = 28; page = 0x4B; files = @('battlescape\scr_battle'); ram = 0xB000 }   # наземный бой: отрисовка карты (этап Б1)
-    @{ n = 29; page = 0x4C; files = @('battlescape\mapgen'); ram = 0xB000 }   # генератор миссии: карта из блоков по mapScript (16 §3)
-    @{ n = 30; page = 0x4D; files = @('battlescape\pathfind', 'battlescape\units', 'battlescape\doors', 'battlescape\loader') }   # поиск пути (16 §5.4), бойцы миссии, клетки карты (двери, цена прохода) и загрузка графики миссии
-)
-
-# Пакеты данных игры: выход конвертера OxzConv (tmp\sd\OXZ\<игра>), вшиваются в SPG.
-# MCD — наборы частей карт, террейны и mapScripts для генератора миссий (16 §3)
-$packs = @('PAL', 'LANG', 'RULES', 'GEO', 'MCD')
-
-function Invoke-Tool([string]$exe, [string[]]$argv) {
-    # Вывод перехватывается ради предупреждения SDCC 112 (неявное объявление функции): в банке
-    # оно даёт прямой call по младшему слову адреса — внутрь своей же страницы вместо
-    # трамплина ___sdcc_bcall_ehl, и игра молча уходит в перезапуск (нашлось на scr_dogf.c
-    # без globe.h, findings_log 2026-09-17). Такое предупреждение валит сборку.
-    $prev = $ErrorActionPreference
-    $ErrorActionPreference = 'Continue'
-    $log = (& $exe @argv 2>&1 | Out-String)
-    $ErrorActionPreference = $prev
-    if ($log.Length) { Write-Host $log -NoNewline }
-    if ($LASTEXITCODE -ne 0) { throw "$exe failed with code $LASTEXITCODE" }
-    # сообщение — латиницей: файл в UTF-8 без BOM, PS 5.1 читает строки как ANSI
-    if ($log -match 'warning 112') { throw "implicit function declaration (sdcc warning 112) - include the header" }
-}
-
-# Конвертер OxzConv (C#, OxzConv) пересобирается, если его исходники новее exe.
-$conv = Join-Path $root 'tmp\oxzconv\bin\Release\OxzConv.exe'
-$convSrc = Get-ChildItem (Join-Path $root 'OxzConv') -Recurse -File -Include *.cs, *.csproj, *.txt, *.json, *.props
-if (-not (Test-Path $conv) -or ($convSrc | Where-Object { $_.LastWriteTime -gt (Get-Item $conv).LastWriteTime })) {
-    & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $root 'tools\dotnet.ps1') build (Join-Path $root 'OxzConv\OxzConv.csproj') -c Release -v q
-    if ($LASTEXITCODE -ne 0) { throw 'OxzConv build failed' }
-}
-
-# Данные игры: если нет или конвертер новее — сконвертировать копию из Steam\.
-$gameDirs = @{ TFTD = 'Steam\X-COM Terror from the Deep\TFD'; UFO = 'Steam\XCom UFO Defense\XCOM' }
-$data = Join-Path $root "tmp\sd\OXZ\$Game"
-$stamp = Join-Path $data 'RULES.PAK'
-if (-not (Test-Path $stamp) -or (Get-Item $conv).LastWriteTime -gt (Get-Item $stamp).LastWriteTime) {
-    Invoke-Tool $conv @('--game', (Join-Path $root $gameDirs[$Game]), '--out', (Join-Path $root 'tmp\sd'))
-}
-
-# Карта: distr\ (содержимое карты) + образ oxz_card.img в корне — одна и та же карта
-# и для эмулятора, и для железа (23_distribution.md). Раскладку и образ делает
-# dist.ps1 -NoBuild; зовём его, только если данные конвертера новее образа.
-$img = Join-Path $root 'oxz_card.img'
-if (-not $NoCard -and (-not (Test-Path $img) -or (Get-Item $stamp).LastWriteTime -gt (Get-Item $img).LastWriteTime)) {
-    & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'dist.ps1') -NoBuild
-    if ($LASTEXITCODE -ne 0) { throw 'dist.ps1 failed' }
-}
-
-# Заголовки из реестров конвертера — в tmp\build\gen
-$gen = Join-Path $out 'gen'
-Invoke-Tool $conv @('headers', $gen)
-
-# --debug: отладочные записи (.adb -> oxz.cdb) с адресами и статических функций —
-# для меток отладчика и профилировщика эмулятора (tools/mklabels.js); код не меняется.
-$cflags = @('-mz80', '--sdcccall', '1', '--opt-code-size', '--std-sdcc11', '--debug', '-I', (Join-Path $src 'inc'), '-I', (Join-Path $src 'common'), '-I', $gen)
-$rels = @()
-$utf8 = New-Object System.Text.UTF8Encoding $false
-
-# Таблица «банк -> страница» для set_bank (src/kernel/win0/bank.s)
-$maxBank = ($banks | ForEach-Object { $_.n } | Measure-Object -Maximum).Maximum
-$tbl = @("`t.module banks", "`t.area _CODE", '_bank_page::', "`t.db 0x02`t; bank 0: Win2 page at SPG start")
-for ($n = 1; $n -le $maxBank; $n++) {
-    $b = $banks | Where-Object { $_.n -eq $n }
-    $p = if ($b) { $b.page } else { 0x02 }
-    $tbl += ("`t.db 0x{0:X2}`t; bank {1}" -f $p, $n)
-}
-$banksAsm = Join-Path $out 'banks.s'
-[System.IO.File]::WriteAllText($banksAsm, ($tbl -join "`r`n") + "`r`n", $utf8)
-
-# Раскладка пакетов по страницам и таблица pack_page для src/kernel/win0/res.s
-$page = $RES_PAGE
-$dataArgs = @()
-$ptbl = @("`t.module packs", "`t.area _CODE", '_pack_page::')
-foreach ($p in $packs) {
-    $f = Join-Path $data "$p.PAK"
-    if (-not (Test-Path $f)) { throw "no data pack $f" }
-    $pages = [int][Math]::Ceiling((Get-Item $f).Length / 16384)
-    if ($page + $pages - 1 -gt $RES_LAST) { throw "packs do not fit into #$('{0:X2}' -f $RES_PAGE)-#$('{0:X2}' -f $RES_LAST)" }
-    $dataArgs += @('--data', ('0x{0:X2}:{1}' -f $page, $f))
-    $ptbl += ("`t.db 0x{0:X2}`t; {1}.PAK, {2} pages" -f $page, $p, $pages)
-    $page += $pages
-}
-$ptbl += '_pack_count::', ("`t.db {0}" -f $packs.Count)
-$packsAsm = Join-Path $out 'packs.s'
-[System.IO.File]::WriteAllText($packsAsm, ($ptbl -join "`r`n") + "`r`n", $utf8)
-
-foreach ($a in $asm_common) {
-    $rel = Join-Path $out ((Split-Path $a -Leaf) + '.rel')
-    Invoke-Tool sdasz80 @('-plosgff', '-o', $rel, (Join-Path $src "$a.s"))
-    $rels += $rel
-}
-foreach ($g in @($banksAsm, $packsAsm)) {
-    $rel = Join-Path $out ([System.IO.Path]::GetFileNameWithoutExtension($g) + '.rel')
-    Invoke-Tool sdasz80 @('-plosgff', '-o', $rel, $g)
-    $rels += $rel
-}
-
-foreach ($c in $c_common) {
-    $rel = Join-Path $out ((Split-Path $c -Leaf) + '.rel')
-    Invoke-Tool sdcc ($cflags + @('-c', (Join-Path $src "$c.c"), '-o', $rel))
-    $rels += $rel
-}
-
-$bankLink = @(); $bankCheck = @(); $bankMap = @()
-foreach ($b in $banks) {
-    $n = $b.n
-    $seg = "BANK$n"
-    foreach ($c in $b.files) {
-        $rel = Join-Path $out ((Split-Path $c -Leaf) + '.rel')
-        $s = Join-Path $src "$c.s"               # ассемблер банка: область .area _BANKn в самом файле
-        if (Test-Path $s) { Invoke-Tool sdasz80 @('-plosgff', '-o', $rel, $s) }
-        else { Invoke-Tool sdcc ($cflags + @('--codeseg', $seg, '--constseg', $seg, '-c', (Join-Path $src "$c.c"), '-o', $rel)) }
-        $rels += $rel
+# cmake and ninja: PATH first, then the copies Visual Studio ships (Windows).
+function Find-Tool([string]$name, [string]$vsSubdir) {
+    $c = Get-Command $name -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($c) { return $c.Source }
+    if ($onWindows) {
+        $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio/Installer/vswhere.exe'
+        if (Test-Path $vswhere) {
+            foreach ($vs in & $vswhere -all -prerelease -property installationPath) {
+                $p = Join-Path $vs "Common7/IDE/CommonExtensions/Microsoft/CMake/$vsSubdir/$name.exe"
+                if (Test-Path $p) { return $p }
+            }
+        }
     }
-    $base = $n * 0x10000 + 0x8000
-    # --codeseg BANKn даёт область _BANKn; tab — выровненная таблица _GTAB в конце банка
-    $bankLink  += ('-Wl-b_{0}=0x{1:X}' -f $seg, $base)
-    if ($b.tab) {
-        $tabAt = $n * 0x10000 + $b.tab
-        $bankLink  += ('-Wl-b_GTAB=0x{0:X}' -f $tabAt)
-        $bankCheck += ('_{0}=0x{1:X}-0x{2:X}' -f $seg, $base, $tabAt)
-        $bankCheck += ('_GTAB=0x{0:X}-0x{1:X}' -f $tabAt, ($base + 0x4000))
-    } elseif ($b.ram) {   # хвост страницы с ram — рабочие таблицы банка (адреса в .s), код — до него
-        $bankCheck += ('_{0}=0x{1:X}-0x{2:X}' -f $seg, $base, ($n * 0x10000 + $b.ram))
-    } else {
-        $bankCheck += ('_{0}=0x{1:X}-0x{2:X}' -f $seg, $base, ($base + 0x4000))
-    }
-    $bankMap   += @('--bank', ('{0}:0x{1:X2}' -f $n, $b.page))
+    throw "$name not found (PATH or Visual Studio CMake tools)"
 }
+$cmake = Find-Tool 'cmake' 'CMake/bin'
+$ninja = Find-Tool 'ninja' 'Ninja'
 
-# Ошибка кодогенерации SDCC 4.5 (сравнение с памятью через sub) — tools/checkasm.js
-$asmFiles = $rels | ForEach-Object { [System.IO.Path]::ChangeExtension($_, '.asm') } | Where-Object { Test-Path $_ }
-Invoke-Tool node (@((Join-Path $root 'tools\checkasm.js')) + $asmFiles)
+if ($Clean -and (Test-Path $out)) { Remove-Item -Recurse -Force $out }
 
-$ihx = Join-Path $out 'oxz.ihx'
-Invoke-Tool sdcc (@('-mz80', '--sdcccall', '1', '--no-std-crt0', '--debug',
-    '--code-loc', $CODE_LOC, '--data-loc', $DATA_LOC, "-Wl-b_DMABUF=$DMABUF_LOC", "-Wl-b_MUSIC=$MUSIC_LOC") + $bankLink + @('-o', $ihx) + $rels)
+# Configure every time: cheap, and -Game / -GameDir / -NoCard always take effect.
+$card = if ($NoCard) { 'OFF' } else { 'ON' }
+$cfg = @('-S', $root, '-B', $out, '-G', 'Ninja', "-DCMAKE_MAKE_PROGRAM=$ninja",
+         "-DOXZ_GAME=$Game", "-DOXZ_GAME_DIR=$GameDir", "-DOXZ_CARD=$card")
+& $cmake @cfg | Out-Null
+if ($LASTEXITCODE -ne 0) { & $cmake @cfg; throw 'cmake configure failed' }
 
-Invoke-Tool node (@((Join-Path $root 'tools\checkmap.js'), (Join-Path $out 'oxz.map'),
-    "_CODE,_HOME,_INITIALIZER,_GSINIT,_GSFINAL=$CODE_LOC-$CODE_END",
-    "_DATA,_INITIALIZED,_BSEG,_BSS,_HEAP,_KDATA=$DATA_LOC-$DATA_END",
-    "_DMABUF=$DMABUF_LOC-$DMABUF_END", "_MUSIC=$MUSIC_LOC-$MUSIC_END") + $bankCheck)
-
-$winmap = @('--win', "0:$KERNEL_PAGE", '--win', "1:$DATA_PAGE") + $bankMap
-Invoke-Tool node (@((Join-Path $root 'tools\mkspg.js'), $ihx, (Join-Path $out 'oxz.spg'),
-    '--pc', $ENTRY, '--sp', $STACK_TOP) + $winmap + $dataArgs)
-Invoke-Tool node (@((Join-Path $root 'tools\mklabels.js'), (Join-Path $out 'oxz.noi'),
-    (Join-Path $out 'oxz.labels'), '--cdb', (Join-Path $out 'oxz.cdb')) + $winmap)
+$bld = @('--build', $out)
+if ($env:OXZ_JOBS) { $bld += @('-j', $env:OXZ_JOBS) }
+& $cmake @bld
+if ($LASTEXITCODE -ne 0) { throw 'build failed' }
