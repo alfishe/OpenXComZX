@@ -13,6 +13,9 @@ extern uint8_t cur_pal;                  // группа палитры спра
 void cursor_sync(void);                  // input.s: запомнить показания мыши, не двигая курсор
 extern volatile uint8_t in_btn_latch, in_key_latch, in_key_rep, in_key_reps, in_prev_keys;
 uint8_t in_reps;                     // нажатий за один опрос (поворот глобуса делает столько шагов)
+// Страница листа спрайтов курсора (TS_SGPAGE). Обычно — листы TSU, но бой отдаёт их под холст
+// карты и на это время переносит лист в свободные строки экрана (cursor_sheet).
+static uint8_t cur_sheet = TSU_PAGE;
 
 // Стрелка 11 строк: '#' — контур, '.' — заливка
 static const char arrow[11][9] = {
@@ -34,7 +37,7 @@ static void sfile_write(uint8_t idx, uint16_t v)
 void cursor_color(uint8_t color) __banked
 {
 	uint8_t old = pg_win3();
-	pg_map3(TSU_PAGE);
+	pg_map3(cur_sheet);
 	uint8_t *sheet = (uint8_t *)0xC000;
 	for (uint8_t y = 0; y < 16; y++)
 		for (uint8_t x = 0; x < 8; x++) sheet[y * 256 + x] = 0;
@@ -49,6 +52,12 @@ void cursor_color(uint8_t color) __banked
 			*p |= (x & 1) ? c : (uint8_t)(c << 4);
 		}
 	pg_map3(old);
+}
+
+void cursor_sheet(uint8_t page) __banked
+{
+	cur_sheet = page;
+	TS_SGPAGE = page;
 }
 
 void input_init(void) __banked

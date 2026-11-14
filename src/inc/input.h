@@ -37,6 +37,9 @@ void input_isr(void);                  // Win0 (input.c): из кадровог�
 void input_init(void) __banked;
 uint8_t input_poll(event_t *e) __banked;        // 1 — есть событие
 void cursor_color(uint8_t color) __banked;      // цвет курсора экрана (_cursorColor OpenXcom)
+// Где лежит лист спрайта курсора (страница, кратная 8): TSU_PAGE, а в бою — строки экрана,
+// потому что листы TSU заняты холстом карты. После смены — cursor_color, он рисует стрелку.
+void cursor_sheet(uint8_t page) __banked;
 // Цвета курсора — номера цветов палитры игры (Mod.cpp: GEOSCAPE_CURSOR, BATTLESCAPE_CURSOR).
 // У боя своя палитра: группа #F0..#FF в ней тёмная, и курсор в ней не виден.
 #define CURSOR_GEOSCAPE     252

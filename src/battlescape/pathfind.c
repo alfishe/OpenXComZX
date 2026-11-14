@@ -71,20 +71,29 @@ static uint8_t cell_pack(const uint8_t *pf, const uint8_t *c)
 		if (o < lv) lv = o;
 	}
 	if (lv <= -16) b |= PC_STAIRS;
+	uint8_t bw = c[3] ? pf[PF_BIGWALL + c[3]] : 0;
+	if (bw == BW_WEST || bw == BW_WN) b |= PC_WEST;
+	if (bw == BW_NORTH || bw == BW_WN) b |= PC_NORTH;
 	if (!c[0] || (pf[PF_FLAGS + c[0]] & 1)) b |= PC_NOFLOOR;
 	uint8_t cost = 0;
 	if (!(b & PC_NOFLOOR)) {                     // цена входа: пол плюс объект
 		uint8_t t = pf[PF_TU + c[0]];
 		if (t != 255) {
+			// Объект с ценой 255 закрывает клетку; объект с ценой 0 (ступени, сиденья) —
+			// нет: до 2026-11-13 он тоже давал 0 и клетка выходила непроходимой. Объект-стена
+			// у края клетки (большая стена 4..9) входу не мешает вовсе.
+			uint8_t shut = 0;
 			cost = t;
-			if (c[3]) {
+			if (c[3] && bw < BW_WEST) {
 				uint8_t o = pf[PF_TU + c[3]];
-				if (o == 255) cost = 0;
+				if (o == 255) shut = 1;
 				else cost += o;
 			}
-			if (cost && cost < pf_step) cost = pf_step;
-			if (!cost && !c[3]) cost = pf_step;
-			if (cost > 15) cost = 15;
+			if (shut) cost = 0;
+			else {
+				if (cost < pf_step) cost = pf_step;
+				if (cost > 15) cost = 15;
+			}
 		}
 	}
 	return (uint8_t)(b | (cost << 4));
@@ -140,11 +149,21 @@ uint8_t pf_find(const pf_req_t *q, uint8_t *path, uint8_t maxlen) __banked
 			uint16_t rb = (uint16_t)(bx1 - bx0 + 1) * 4;
 			far_t ra = pf_cells + ((uint32_t)(((uint16_t)q->z * q->sy + by0) * q->sx + bx0) << 2);
 			uint16_t step = (uint16_t)q->sx * 4;
+			uint8_t *south = pf + PF_SOUTH;   // южные стены ряда выше — северные этого
+			memset(south, 0, PF_W);
 			for (uint8_t y = by0; y <= by1; y++, ra += step) {
 				far_read(ra, rowbuf, rb);
 				const uint8_t *c = rowbuf;
-				for (uint8_t x = bx0; x <= bx1; x++, c += 4)
-					PF_CELL(x, y) = cell_pack(pf, c);
+				uint8_t east = 0;             // восточная стена клетки левее — западная этой
+				for (uint8_t x = bx0; x <= bx1; x++, c += 4) {
+					uint8_t b = cell_pack(pf, c);
+					if (east) b |= PC_WEST;
+					if (south[x]) b |= PC_NORTH;
+					uint8_t bw = c[3] ? pf[PF_BIGWALL + c[3]] : 0;
+					east = bw == BW_EAST || bw == BW_ES;
+					south[x] = bw == BW_SOUTH || bw == BW_ES;
+					PF_CELL(x, y) = b;
+				}
 			}
 		}
 		memset(pf, 0xFF, 4096);
@@ -188,19 +207,33 @@ uint8_t pf_find(const pf_req_t *q, uint8_t *path, uint8_t maxlen) __banked
 		if (PF_COST(q->tx, q->ty) != 0xFF) break;           // дошли
 		if (!bx0 && !by0 && bx1 == q->sx - 1 && by1 == q->sy - 1) break;   // и так вся карта
 	}
+	// Путь пишется от цели назад. Длиннее maxlen — отдаём его первые maxlen шагов: боец
+	// идёт, пока хватает времени и шагов, как в оригинале (Pathfinding::calculate ищет без
+	// оглядки на время бойца, а UnitWalkBState останавливает его, когда время кончилось).
+	// До 2026-11-13 длинный путь давал 0, и щелчок за пределами досягаемости не делал ничего.
 	uint8_t n = 0;
 	if (PF_COST(q->tx, q->ty) != 0xFF) {
 		uint8_t x = q->tx, y = q->ty;
-		uint8_t buf[32];
-		while ((x != q->fx || y != q->fy) && n < 32 && n < maxlen) {
+		uint16_t len = 0;
+		while ((x != q->fx || y != q->fy) && len < PF_W * PF_W) {
 			uint8_t d = PF_FROM(x, y) & 7;
-			buf[n++] = d;
 			x = (uint8_t)((int16_t)x - pf_dx[d]);
 			y = (uint8_t)((int16_t)y - pf_dy[d]);
+			len++;
 		}
-		if (x == q->fx && y == q->fy)
-			for (uint8_t i = 0; i < n; i++) path[i] = buf[n - 1 - i];
-		else n = 0;
+		if (x == q->fx && y == q->fy) {
+			n = len > maxlen ? maxlen : (uint8_t)len;
+			uint16_t skip = len - n;   // хвост у цели, до которого не дойти
+			uint8_t i = n;
+			x = q->tx; y = q->ty;
+			while (x != q->fx || y != q->fy) {
+				uint8_t d = PF_FROM(x, y) & 7;
+				if (skip) skip--;
+				else path[--i] = d;
+				x = (uint8_t)((int16_t)x - pf_dx[d]);
+				y = (uint8_t)((int16_t)y - pf_dy[d]);
+			}
+		}
 	}
 	pg_map3(old);
 	return n;

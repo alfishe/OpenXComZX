@@ -122,7 +122,7 @@ oxz_bank(24 PAGE 0x47 TAB 0xBC00 FILES geoscape/earth/globe geoscape/earth/globe
 oxz_bank(25 PAGE 0x48 RAM 0xB800 FILES geoscape/earth/globe_sh geoscape/earth/globe_sh_s geoscape/earth/globe_view geoscape/earth/globe_sh_tab)   # глобус, банк 25 — ассемблер: тень (globe_sh.s — кадр, globe_sh_s.s — блоки и строки, globe_sh_tab.s — таблицы), предрасчитанные виды (globe_view.s); с #B800 — рабочие таблицы тени
 oxz_bank(26 PAGE 0x49 RAM 0xA800 FILES geoscape/earth/globe_det geoscape/earth/globe_det_s)   # детали глобуса: линии, подписи, города (globe_det.c; точки и отрезки — globe_det_s.s); с #A800 — рабочая память
 oxz_bank(27 PAGE 0x4A RAM 0xB000 FILES geoscape/base/scr_inv)   # инвентарь бойца (экипировка перед вылетом); с #B000 — точки под несомым предметом
-oxz_bank(28 PAGE 0x4B RAM 0xB000 FILES battlescape/scr_battle)   # наземный бой: отрисовка карты (этап Б1)
+oxz_bank(28 PAGE 0x4B RAM 0xB400 FILES battlescape/scr_battle)   # наземный бой: отрисовка карты (этап Б1); с #B400 — таблицы кадров (__at)
 oxz_bank(29 PAGE 0x4C RAM 0xB000 FILES battlescape/mapgen)   # генератор миссии: карта из блоков по mapScript (16 §3)
 oxz_bank(30 PAGE 0x4D FILES battlescape/pathfind battlescape/units battlescape/doors battlescape/loader)   # поиск пути (16 §5.4), бойцы миссии, клетки карты (двери, цена прохода) и загрузка графики миссии
 

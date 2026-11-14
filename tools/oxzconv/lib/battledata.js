@@ -80,6 +80,38 @@ class BattleData {
 
 	rul(file) { return Y.load(this.ox.readText(`standard/${this.ruleFolder}/${file}`)); }
 
+	// MCD fixes of the ruleset (mcdPatches.rul, MCDPatch::modifyData): the original MCD files
+	// have walls and ramps marked wrong - e.g. the Triton ramp is TU_Walk 255, so the squad
+	// could not leave the craft. Only the fields the engine uses are taken: TUWalk, bigWall,
+	// terrainHeight, noFloor, stopLOS, objectType. Result: set name -> [{ index, fields }].
+	mcdPatches() {
+		if (this.patches) return this.patches;
+		this.patches = new Map();
+		let doc = null;
+		try { doc = this.rul('mcdPatches.rul'); } catch { return this.patches; }
+		for (const p of Y.list(Y.get(doc, 'MCDPatches')) || []) {
+			const type = Y.str(Y.get(p, 'type'));
+			if (type === null) continue;
+			const l = this.patches.get(type) || [];
+			for (const d of Y.list(Y.get(p, 'data')) || []) l.push({ index: Y.int(Y.get(d, 'MCDIndex'), -1), d });
+			this.patches.set(type, l);
+		}
+		return this.patches;
+	}
+
+	patchMcd(set, parts) {
+		for (const { index, d } of this.mcdPatches().get(set) || []) {
+			const r = parts[index];
+			if (!r) continue;
+			if (Y.has(d, 'TUWalk')) r.tuWalk = Y.int(Y.get(d, 'TUWalk'));
+			if (Y.has(d, 'bigWall')) r.bigWall = Y.int(Y.get(d, 'bigWall'));
+			if (Y.has(d, 'terrainHeight')) r.tLevel = Y.int(Y.get(d, 'terrainHeight'));
+			if (Y.has(d, 'noFloor')) r.noFloor = Y.bool(Y.get(d, 'noFloor'));
+			if (Y.has(d, 'stopLOS')) r.stopLOS = Y.bool(Y.get(d, 'stopLOS'));
+			if (Y.has(d, 'objectType')) r.tileType = Y.int(Y.get(d, 'objectType'));
+		}
+	}
+
 	// ---------------------------------------------------------------- rules
 	// Terrains come from terrains.rul and from battlescapeTerrainData of crafts and UFOs: they
 	// have the same structure (sets + blocks), and the generator puts them over the field.
@@ -269,6 +301,7 @@ class BattleData {
 				doneSets.add(s);
 				if (!gfs.has(`TERRAIN/${s}.MCD`)) { report.push(`  battle: no TERRAIN/${s}.MCD`); continue; }
 				const parts = readMcd(gfs.read(`TERRAIN/${s}.MCD`));
+				this.patchMcd(s, parts);
 				this.setSize.set(s, parts.length);
 				const data = Buffer.alloc(parts.length * MCDSET_RECORD);
 				parts.forEach((r, i) => {

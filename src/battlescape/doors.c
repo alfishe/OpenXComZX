@@ -55,7 +55,7 @@ uint8_t cell_cost(const dmap_t *m, uint8_t x, uint8_t y, uint8_t z, uint8_t d, u
 	far_read(cell_addr(m, x, y, z), c, 4);
 	uint8_t cost = part_get(m, PF_TU + c[0]);
 	if (cost == 255) cost = 0;
-	if (c[3]) {
+	if (c[3] && part_get(m, PF_BIGWALL + c[3]) < BW_WEST) {   // стена у края клетки не мешает войти
 		uint8_t o = part_get(m, PF_TU + c[3]);
 		if (o != 255) cost += o;
 	}

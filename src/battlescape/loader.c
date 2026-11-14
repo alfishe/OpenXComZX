@@ -108,6 +108,7 @@ uint16_t tiles_load(const tiles_req_t *q, uint8_t *pages, uint8_t *nps,
 			far_write(FAR(q->page, PF_TU) + part, &mc[7], 1);
 			far_write(FAR(q->page, PF_TLEVEL) + part, &mc[6], 1);
 			far_write(FAR(q->page, PF_FLAGS) + part, &mc[3], 1);
+			far_write(FAR(q->page, PF_BIGWALL) + part, &mc[4], 1);
 			if ((mc[3] & 8) && mc[8] && base + mc[8] < 256) {
 				uint8_t v = (uint8_t)(base + mc[8]);
 				far_write(FAR(q->page, PF_ALT) + part, &v, 1);

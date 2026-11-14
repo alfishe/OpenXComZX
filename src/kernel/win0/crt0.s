@@ -22,6 +22,7 @@
 	.globl	_input_on
 
 KERNEL_PAGE	= 0x04
+SCREEN_VPAGE	= 0x10			; холст интерфейса (map.h SCREEN_PAGE): на разрезе — панель боя
 IM2_I		= 0x3E
 STACK_TOP	= 0x3EF0		; выше — векторы IM2 (#3EFB-#3F00), их трогать нельзя
 ;; Ниже этой границы под стеком остаётся кольцо музыки (#1E00-#2E0F): если стек дойдёт
@@ -242,6 +243,13 @@ split_offs:
 	out	(c), a
 	ld	bc, #0x05AF
 	out	(c), a
+	ld	a, (_map_vpage)		; карта в своём холсте — панель показывается из холста
+	or	a			;   интерфейса (VPage действует со следующей строки, 02 §4)
+	jr	z, split_ph
+	ld	a, #SCREEN_VPAGE
+	ld	bc, #0x01AF
+	out	(c), a
+	xor	a, a
 split_ph:
 	inc	a
 	ld	(_split_phase), a
@@ -303,10 +311,17 @@ _vblank_line::	.ds	2		; строка возврата смещений карт�
 _split_phase::	.ds	1		; 0 — следующее прерывание на строке разреза, 1 — в гашении
 _split_on::	.ds	1		; 1 — сплит включён (бой)
 _split_mark::	.ds	1		; 1 — только метка луча (фаза), без смещений (глобус)
+_map_vpage::	.ds	1		; холст карты боя (VPage до разреза); 0 — карта в холсте интерфейса
 	.area	_CODE
 
-;; Смещения карты боя в начале кадра (9 бит на регистр)
+;; Смещения карты боя в начале кадра (9 бит на регистр) и её холст
 set_map_offs:
+	ld	a, (_map_vpage)
+	or	a
+	jr	z, 1$
+	ld	bc, #0x01AF		; VPage
+	out	(c), a
+1$:
 	ld	hl, (_map_gx)
 	ld	bc, #0x02AF		; GXOffsL
 	out	(c), l
