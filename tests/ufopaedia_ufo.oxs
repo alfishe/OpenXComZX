@@ -1,8 +1,8 @@
 # Автотест Уфопедии UFO (статьи типов 1..9): то же, что tests/ufopaedia.oxs, но
 # кнопки статьи — в левом верхнем углу (OK 5,5; «<<» 40,5; «>>» 75,5).
-# Нужна сборка UFO: powershell -File tools\build.ps1 -Game UFO
+# Нужна сборка UFO: node tools/build.js -Game UFO
 # Снимки — tmp/shots/ufopaedia_ufo/.
-# Запуск: powershell -File tools\run.ps1 -Script tests\ufopaedia_ufo.oxs -Headless
+# Запуск: node tools/run.js -Script tests/ufopaedia_ufo.oxs -Headless
 
 waitmark 1 600
 pokew _cursor_x 110

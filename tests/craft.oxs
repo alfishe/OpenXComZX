@@ -4,7 +4,7 @@
 # craft[] #186D (34 Б: type, base, num, pos(8), dest_kind, dest, speed, fuel,
 # damage, weap[2] по 4 Б с +#14), soldier[0] #07:0000 (craft +#19, armor +#1B).
 # Снимки — tmp/shots/craft/.
-# Запуск: powershell -File tools\run.ps1 -Script tests\craft.oxs -Headless
+# Запуск: node tools/run.js -Script tests/craft.oxs -Headless
 
 waitmark 1 600
 poke _alien_off 1

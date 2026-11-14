@@ -47,7 +47,7 @@ typedef struct {                     // предмет бойца: копия з
 	uint8_t w, h;                    // размер в клетках
 } sv_t;
 
-// Память банка за кодом (build.ps1: ram банка 27 — с #B000)
+// Память банка за кодом (CMakeLists.txt: RAM банка 27 — с #B000)
 static uint8_t __at(0xB000) carry_buf[HAND_W * SLOT_W * HAND_H * SLOT_H];   // точки под несомым
 static r_invs_t __at(0xB600) secs[SEC_MAX];          // правила секций (читаются при открытии)
 static sv_t __at(0xB700) sv[SV_MAX];                 // предметы бойца

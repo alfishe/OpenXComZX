@@ -2,7 +2,7 @@
 # Вниз — 4 единицы времени, вверх — 8; ноги берутся из кадров 32..39 листа (legsKneel
 # оригинала), всё остальное опускается на 4 точки (offYKneel). Перед шагом боец встаёт.
 # Проверяется по снимкам: 00 — стоя, 01 — на колене, 02 — снова стоя.
-# Запуск: powershell -File tools\run.ps1 -Script tests\bat_kneel.oxs -Headless
+# Запуск: node tools/run.js -Script tests/bat_kneel.oxs -Headless
 
 waitmark 1 600
 poke _alien_off 1

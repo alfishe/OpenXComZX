@@ -23,24 +23,24 @@
   `project_docs/01_environment.md`.
 - `REF/` — справочные материалы, не редактировать.
 - Сборка и тесты (подробно — `project_docs/07_debug_tools.md`):
-  `powershell -File tools\build.ps1`,
-  `powershell -File tools\run.ps1 -Script tests\selftest.oxs -Headless`,
-  `powershell -File tools\run.ps1 -Script tests\ui_geoscape.oxs -Headless`,
-  `powershell -File tools\run.ps1 -Script tests\campaign.oxs -Headless`,
+  `node tools/build.js`,
+  `node tools/run.js -Script tests/selftest.oxs -Headless`,
+  `node tools/run.js -Script tests/ui_geoscape.oxs -Headless`,
+  `node tools/run.js -Script tests/campaign.oxs -Headless`,
   также `tests\lab.oxs`, `math.oxs` (32-битная арифметика ядра), `transfer.oxs`,
   `craft.oxs`, `ufopaedia.oxs`, `month.oxs`,
   `aliens.oxs`, `dogfight.oxs`, `dogfight2.oxs`, `basedefense.oxs`, `ironman.oxs`,
-  `globe.oxs` (скорость глобуса по зумам — `tools\globeprof.ps1`), `bat_render.oxs`,
+  `globe.oxs` (скорость глобуса по зумам — `tools/globeprof.js`), `bat_render.oxs`,
   `sdinfo*.oxs` (окно диагностики SD: норма, отказ DMA, SDHC, нет карты; настройки
   эмулятора сценарий задаёт строкой `#@set`)
   (`ufopaedia_ufo.oxs` — после сборки `-Game UFO`;
-  все разом — `powershell -File tools\runtests.ps1`), `month.oxs`, `aliens.oxs`;
-  все разом — `powershell -File tools\runtests.ps1` (итог «имя=код(кадров)»;
+  все разом — `node tools/runtests.js`), `month.oxs`, `aliens.oxs`;
+  все разом — `node tools/runtests.js` (итог «имя=код(кадров)»;
   сценарии, кроме `aliens`, выключают пришельцев `poke _alien_off 1`)
   (код выхода 0 — тест прошёл; снимки окон — `tmp/shots/<тема>/`,
-  листы — `powershell -File tools\shotsheet.ps1 -Dir … -Out …`, новые окна —
+  листы — `node tools/shotsheet.js -Dir … -Out …`, новые окна —
   всегда со снимками; сохранения эмулятора — `tmp/saves/`; снимки для README —
-  `tools\readme_shots.ps1`, в документах группы не больше 4 снимков). Эмулятор пересобирать
+  `tools/readme_shots.js`, в документах группы не больше 4 снимков). Эмулятор пересобирать
   `cmake --build unreal/build/oxz -j 2`. Профилировщик — команды сценария
   `profile on/off` (07 §6).
 - SDCC 4.5.0 портит сравнение байта в A с глобальной переменной, если
@@ -82,7 +82,7 @@
   `project_docs/13_sd_card.md`). Карта одна и для эмулятора, и для железа:
   содержимое — `distr/` в корне проекта, образ — `oxz_card.img` там же
   (единственное исключение из правила «всё в `tmp/`»), собирает
-  `powershell -File tools\dist.ps1` (`build.ps1` зовёт его сам, когда данные
+  `node tools/dist.js` (`build.js` зовёт его сам, когда данные
   новее образа). **Образ только FAT32** — TS-BIOS с FAT16 не грузится
   (`project_docs/23_distribution.md`). DMA — прямыми регистрами с опросом `DMAStatus`
   (очередь `dmaq` не запущена).

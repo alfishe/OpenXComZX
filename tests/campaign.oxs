@@ -12,7 +12,7 @@
 # стран), поэтому funds задаётся poke, а проверяются разницы.
 # Файл слота — tmp/saves/TFTD/SLOT01.SAV (служба BIOS эмулятора).
 # Снимки — tmp/shots/campaign/.
-# Запуск: powershell -File tools\run.ps1 -Script tests\campaign.oxs -Headless
+# Запуск: node tools/run.js -Script tests/campaign.oxs -Headless
 
 waitmark 1 600
 # пришельцы не начинают миссий (их проверяет aliens.oxs)

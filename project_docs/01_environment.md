@@ -62,23 +62,23 @@ uint8_t f(uint8_t k) { if (k == g) return 0; g = k; return k; }
 
 ## Сборка на macOS (добавлена 2026-11-13)
 
-Те же скрипты `tools/*.ps1` работают в `pwsh` 7 на macOS (Apple Silicon проверен): пути в
-них — через `/`, что понимают и Windows PowerShell 5.1, и pwsh.
+Скрипты сборки и запуска — `tools/*.js` (Node.js), одни и те же на Windows, macOS (Apple Silicon
+проверен) и Linux; PowerShell, .NET и mtools не нужны (с 2026-11-13, findings_log).
 
 | Что | На Windows | На macOS |
 |---|---|---|
-| Подготовка | — | `sh tools/setup_unix.sh` (brew: powershell, node, cmake, ninja, mtools, boost, bison, flex; SDCC; клон OpenXcom в `REF/OpenXcom`) |
+| Подготовка | — | `sh tools/setup_unix.sh` (brew: node, cmake, ninja, boost, bison, flex; SDCC; клон OpenXcom в `REF/OpenXcom`) |
 | SDCC | 4.5.0 в PATH | **4.5.0 из исходников** в `tmp/toolchain/sdcc-4.5.0` (только порт z80); `CMakeLists.txt` ищет её первой (`find_program` HINTS). В Homebrew — 4.6, обходы ошибок 4.5 на ней не проверены |
 | Конвертер | `node tools/oxzconv/oxzconv.js` (09 §2) | то же |
 | Данные игры | `Steam\…` | то же `Steam/…` или `-GameDir <папка с GEODATA>` |
-| Образ карты | `robimg.exe` (`unreal/tools`) | `tools/mkmbr.js` (MBR: один раздел FAT32 LBA с сектора 2048) + `mformat -F -c 4` + `mcopy` (mtools): та же раскладка — 256 МБ, кластер 2 КБ |
+| Образ карты | `tools/fat32img.js` (из `dist.js`): MBR, один раздел FAT32 LBA с сектора 2048, 256 МБ, кластер 2 КБ | то же |
 | Загрузчик WC на карте | `unreal/soft/WC/exe` | то же; без `unreal/` карта собирается без WC (в эмуляторе игра идёт со снапшота, на железе такая карта не загрузится) |
-| Эмулятор | `unreal/` (`run.ps1`, сценарии `.oxs`) | **unreal-ng**, модель TSL: `pwsh tools/run_ung.ps1` (WebAPI: SD в `sd.zc`, SPG, N кадров, снимок). Сценариев `.oxs` в unreal-ng нет. Нужен `TS_VDAC=5BIT` (без VDAC в unreal-ng нет DMA BLT2 — глобус зависает): копия `unreal-qt.app` в `tmp/unreal-ng/` с этой строкой в `Contents/Resources/configs/ts-conf/unreal.ini` (findings_log 2026-11-13) |
+| Эмулятор | `unreal/` (`run.js`, сценарии `.oxs`) | **unreal-ng**, модель TSL: `node tools/run_ung.js` (WebAPI: SD в `sd.zc`, SPG, N кадров, снимок). Сценариев `.oxs` в unreal-ng нет. Нужен `TS_VDAC=5BIT` (без VDAC в unreal-ng нет DMA BLT2 — глобус зависает): копия `unreal-qt.app` в `tmp/unreal-ng/` с этой строкой в `Contents/Resources/configs/ts-conf/unreal.ini` (findings_log 2026-11-13) |
 
 `REF/OpenXcom` (правила, строки и шрифты, которые читает конвертер) на Mac — клон `github.com/OpenXcom/OpenXcom`
 (2026-11-13, `4a4bae5`); его версия может отличаться от копии на Windows.
 
-Данные игры — своя копия оригинала: `-GameDir <папка с GEODATA>` (`build.ps1`) или
+Данные игры — своя копия оригинала: `-GameDir <папка с GEODATA>` (`build.js`) или
 `-DOXZ_GAME_DIR` (CMake).
 
 unreal-ng о карте с MBR при вставке пишет «this SD boot path reads a FAT filesystem directly

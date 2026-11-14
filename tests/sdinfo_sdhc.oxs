@@ -3,7 +3,7 @@
 # драйвера (sd.s set_arg) не выполнялась ни разу, а любая карта от 4 ГБ — SDHC/SDXC.
 # Ждём: тип карты 8 (+#03, CT_BLOCK), том FAT32, чтение пачкой = посекторно, 13 пакетов OK;
 # главное меню окно диагностики само не открывает. Снимок — tmp/shots/sdinfo/05_sdhc.png.
-# Запуск: powershell -File tools\run.ps1 -Script tests\sdinfo_sdhc.oxs -Headless
+# Запуск: node tools/run.js -Script tests/sdinfo_sdhc.oxs -Headless
 #@set ZC.SDHC=1
 
 waitmark 1 600

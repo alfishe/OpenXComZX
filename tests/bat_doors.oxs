@@ -6,7 +6,7 @@
 # Правая кнопка в точке (160, 88) — клетка к западу от бойца, (176, 88) — к северу:
 # после центровки на бойце эти точки не зависят от его координат (17 §4).
 # Снимки — tmp/shots/doors/.
-# Запуск: powershell -File tools\run.ps1 -Script tests\bat_doors.oxs -Headless
+# Запуск: node tools/run.js -Script tests/bat_doors.oxs -Headless
 
 waitmark 1 600
 poke _alien_off 1

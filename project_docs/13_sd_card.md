@@ -79,11 +79,9 @@
 
 Образ один и тот же для эмулятора и для железа — `oxz_card.img` в корне
 проекта, содержимое карты — `distr/` (подробно: 23_distribution.md).
-Собирает `tools/dist.ps1` утилитой `unreal/tools/robimg/robimg.exe`
-(`-p=<образ> -s=262144 -o=2048 -f=0`, затем `-a=1 -C=<distr>`; пути —
-абсолютные, иначе «Error argument format»): 256 МБ, кластер 2 КБ, раздел в
-MBR — **FAT32, потому что TS-BIOS с FAT16 не грузится**. `tools/build.ps1`
-зовёт `dist.ps1 -NoBuild`, когда пакеты новее образа. `tools/run.ps1`
+Собирает `tools/dist.js` (образ пишет `tools/fat32img.js`; до 2026-11-13 — `robimg.exe`):
+256 МБ, кластер 2 КБ, раздел в MBR — **FAT32, потому что TS-BIOS с FAT16 не грузится**. `tools/build.js`
+зовёт `dist.js -NoBuild`, когда пакеты новее образа. `tools/run.js`
 подключает образ (`ZC.SDCARD`), с ключом `-Boot` — грузит машину с него, как
 настоящую. До 2026-09-29 образ был FAT16 (64 МБ, том без MBR) — ветка FAT16
 проверена на нём.

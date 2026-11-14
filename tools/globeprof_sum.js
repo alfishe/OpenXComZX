@@ -1,5 +1,5 @@
 // Сводка профилей рендера глобуса по группам и функциям (кадры = T / 71680): читает
-// tmp/prof_z0..5.txt — вывод эмулятора, их пишет tools/globeprof.ps1 [-Hour 18].
+// tmp/prof_z0..5.txt — вывод эмулятора, их пишет tools/globeprof.js [-Hour 18].
 // node tools/globeprof_sum.js > tmp/profsum.md
 // node tools/globeprof_sum.js ops — по операциям (сценарии с «profile off 200 ops», эмулятор
 // 07 §6): подпрограммы умножения/деления (вызовы, тактов 14 МГц на вызов), такты рендера по

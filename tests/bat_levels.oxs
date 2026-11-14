@@ -3,7 +3,7 @@
 # Проверка по памяти: units[] экрана боя лежит в странице банка 28 (#4B) со смещения #3E00,
 # запись бойца — 12 байт, третий байт — этаж. Ставим выбранному бойцу этаж 1 (над полом
 # корабля) и ведём его на соседнюю клетку: после шага он должен оказаться снова на этаже 0.
-# Запуск: powershell -File tools\run.ps1 -Script tests\bat_levels.oxs -Headless
+# Запуск: node tools/run.js -Script tests/bat_levels.oxs -Headless
 
 waitmark 1 600
 poke _alien_off 1

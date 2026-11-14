@@ -5,7 +5,7 @@
 # с категориями. Смещения: base[0] #0A25, base[1] #0BEE (fac +#18),
 # base[0].scientists #0BE9, transfer[] #216D (base, hours, kind, item, qty).
 # Снимки — tmp/shots/transfer/.
-# Запуск: powershell -File tools\run.ps1 -Script tests\transfer.oxs -Headless
+# Запуск: node tools/run.js -Script tests/transfer.oxs -Headless
 
 waitmark 1 600
 poke _alien_off 1

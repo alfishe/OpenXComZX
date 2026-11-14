@@ -4,7 +4,7 @@
 # month.c, 14_todo §3.13. Смещения state_t (как в campaign.oxs): ending #002E,
 # warned #002F, funds #004A, country[i] #0176 + 73*i (funding[12] +0, act_xcom +24,
 # act_alien +48, flags +72), region[r] #0606 + 48*r.
-# Запуск: powershell -File tools\run.ps1 -Script tests\month.oxs -Headless
+# Запуск: node tools/run.js -Script tests/month.oxs -Headless
 
 waitmark 1 600
 poke _alien_off 1

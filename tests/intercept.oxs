@@ -3,7 +3,7 @@
 # Суть проверки — время: такт «30 минут» с зависшим у цели кораблём раньше занимал
 # 547 кадров (краш-тест макрошага, craft_limit), теперь — полсотни.
 # Корабли отправляет отладочный ключ poke _geo_dbg_fly <сколько> (07 §4).
-# Запуск: powershell -File tools\run.ps1 -Script tests\intercept.oxs -Headless
+# Запуск: node tools/run.js -Script tests/intercept.oxs -Headless
 
 waitmark 1 600
 poke _alien_off 1

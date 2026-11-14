@@ -6,7 +6,7 @@
 # assigned, spent, cost), prod[] #256D (11 Б: base, manuf, engineers, spent(4),
 # amount, flags), base[0].scientists #0BE9.
 # Снимки — tmp/shots/lab/.
-# Запуск: powershell -File tools\run.ps1 -Script tests\lab.oxs -Headless
+# Запуск: node tools/run.js -Script tests/lab.oxs -Headless
 
 waitmark 1 600
 poke _alien_off 1

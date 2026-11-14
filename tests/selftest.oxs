@@ -1,6 +1,6 @@
 # Самотест при запуске (src/main.c selftest): джампер между банками кода и
 # менеджер страниц, затем главное меню интерфейса.
-# Запуск: powershell -File tools\run.ps1 -Script tests\selftest.oxs -Headless
+# Запуск: node tools/run.js -Script tests/selftest.oxs -Headless
 
 waitmark 1 600                  # главное меню нарисовано
 

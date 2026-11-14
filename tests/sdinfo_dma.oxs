@@ -6,7 +6,7 @@
 # не всплывает (игра цела). Открытое запросом, оно показывает Read test MISMATCH (+#05 = 1)
 # и «using CMD17», пакеты — OK. После «fault dmaspi 0» и RETRY — пачка снова совпадает.
 # Вся игра без DMA — любой сценарий с -Set 'ZC.FaultDmaSpi=1' (23 §5).
-# Снимки — tmp/shots/sdinfo/. Запуск: powershell -File tools\run.ps1 -Script tests\sdinfo_dma.oxs -Headless
+# Снимки — tmp/shots/sdinfo/. Запуск: node tools/run.js -Script tests/sdinfo_dma.oxs -Headless
 
 fault dmaspi 1
 waitmark 1 600

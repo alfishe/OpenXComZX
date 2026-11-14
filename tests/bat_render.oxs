@@ -3,7 +3,7 @@
 # ушло под перерисовку прямоугольником (findings_log 2026-09-20).
 # Проверяется: карта собирается и рисуется, работают этаж, скролл и пересборка другого
 # террейна (клавиша G). Снимки — tmp/shots/bat/.
-# Запуск: powershell -File tools\run.ps1 -Script tests\bat_render.oxs -Headless
+# Запуск: node tools/run.js -Script tests/bat_render.oxs -Headless
 
 waitmark 1 600
 poke _alien_off 1

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Runs sdcc / sdasz80 for the CMake build (CMakeLists.txt) with the checks build.ps1
+// Runs sdcc / sdasz80 for the CMake build (CMakeLists.txt) with the checks the old tools/build.ps1
 // used to do around every tool call:
 //   - prints the tool output; a non-zero exit code fails the step;
 //   - SDCC warning 112 (implicit function declaration) fails the step: in a bank it

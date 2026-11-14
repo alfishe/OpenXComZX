@@ -1,11 +1,11 @@
 # OpenXComZX build: SDCC -> Intel HEX -> map check -> SPG (+ data packs) + labels.
 # Memory layout: src/inc/memmap.h, project_docs/08_ui_port_plan.md §4.
 #
-# Usually driven by tools/build.ps1 (same commands as before: -Game, -GameDir, -NoCard);
+# Usually driven by tools/build.js (same commands as before: -Game, -GameDir, -NoCard);
 # directly:
 #   cmake -S . -B tmp/build -G Ninja -DOXZ_GAME=UFO -DOXZ_GAME_DIR=<game folder>
 #   cmake --build tmp/build
-# The build directory must be tmp/build: run.ps1, runtests.ps1, codesize.js and the docs
+# The build directory must be tmp/build: run.js, runtests.js, codesize.js and the docs
 # expect tmp/build/oxz.spg, oxz.labels, *.rel there.
 #
 # Every source is its own build step: only changed files (and the ones whose headers
@@ -39,7 +39,6 @@ set(SDCC_LOCAL ${ROOT}/tmp/toolchain/sdcc-4.5.0/bin)
 find_program(OXZ_SDCC sdcc HINTS ${SDCC_LOCAL} REQUIRED)
 find_program(OXZ_SDAS sdasz80 HINTS ${SDCC_LOCAL} REQUIRED)
 find_program(OXZ_NODE node REQUIRED)
-find_program(OXZ_PWSH NAMES pwsh powershell REQUIRED)
 execute_process(COMMAND ${OXZ_SDCC} --version OUTPUT_VARIABLE SDCC_VERSION_TEXT ERROR_QUIET)
 if(NOT SDCC_VERSION_TEXT MATCHES " 4\\.5\\.0 ")
     message(WARNING "SDCC is not 4.5.0 (${OXZ_SDCC}): the workarounds are verified on 4.5.0 only")
@@ -47,7 +46,6 @@ endif()
 
 # Converter OxzConv: Node.js (tools/oxzconv), no build step.
 set(CONV_RUN ${OXZ_NODE} ${ROOT}/tools/oxzconv/oxzconv.js)
-set(PWSH_RUN ${OXZ_PWSH} -NoProfile -ExecutionPolicy Bypass -File)
 
 # --------------------------------------------------------------------- memory layout
 set(KERNEL_PAGE 0x04)
@@ -130,7 +128,7 @@ oxz_bank(30 PAGE 0x4D FILES battlescape/pathfind battlescape/units battlescape/d
 
 # Пакеты данных игры, вшитые в SPG (выход OxzConv, tmp/sd/OXZ/<игра>). MCD — наборы частей
 # карт, террейны и mapScripts для генератора миссий (16 §3). Остальные пакеты игра читает
-# с SD-карты (tools/dist.ps1).
+# с SD-карты (tools/dist.js).
 set(PACKS PAL LANG RULES GEO MCD)
 
 # ------------------------------------------------------------ converter and game data
@@ -177,11 +175,11 @@ add_custom_command(OUTPUT ${GEN_HEADERS}
     VERBATIM)
 
 # Card: distr/ + oxz_card.img in the project root - the same card for the emulator and the
-# hardware (23_distribution.md); dist.ps1 -NoBuild lays it out when the data changes.
+# hardware (23_distribution.md); dist.js -NoBuild lays it out when the data changes.
 if(OXZ_CARD)
     add_custom_command(OUTPUT ${ROOT}/oxz_card.img
-        COMMAND ${PWSH_RUN} ${ROOT}/tools/dist.ps1 -NoBuild
-        DEPENDS ${DATA_STAMP} ${ROOT}/tools/dist.ps1
+        COMMAND ${OXZ_NODE} ${ROOT}/tools/dist.js -NoBuild
+        DEPENDS ${DATA_STAMP} ${ROOT}/tools/dist.js ${ROOT}/tools/fat32img.js
         WORKING_DIRECTORY ${ROOT}
         COMMENT "SD card: distr/ and oxz_card.img"
         VERBATIM)

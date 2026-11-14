@@ -1,4 +1,4 @@
-// Сверка снимков tools/globeshots.ps1 двух прогонов в окне глобуса (x < 256): node tools/globeshots_cmp.js ref new
+// Сверка снимков tools/globeshots.js двух прогонов в окне глобуса (x < 256): node tools/globeshots_cmp.js ref new
 const fs=require("fs"), zlib=require("zlib");
 function png(p){const b=fs.readFileSync(p);let o=8,w,h,bd,ct,idat=[];while(o<b.length){const len=b.readUInt32BE(o),t=b.slice(o+4,o+8).toString("latin1");if(t==="IHDR"){w=b.readUInt32BE(o+8);h=b.readUInt32BE(o+12);bd=b[o+16];ct=b[o+17];}else if(t==="IDAT")idat.push(b.slice(o+8,o+8+len));o+=12+len;}
 const raw=zlib.inflateSync(Buffer.concat(idat));const bpp=ct===3?1:(ct===2?3:(ct===6?4:1));const rowb=ct===3?Math.ceil(w*bd/8):w*bpp;const out=Buffer.alloc(h*rowb);let prev=Buffer.alloc(rowb);

@@ -212,7 +212,7 @@ pos, size, TFTDMode); элементы родителя развёрнуты п�
 дописывать): `Data/engine_strings.txt` (961), `Data/ui_screens.txt` (98),
 `Data/ui_elements.txt` (163), `Data/music_types.txt` (47), статические
 ресурсы — `tools/oxzconv/lib/resids.js`. `oxzconv.js headers` делает из них `res_ids.h`,
-`str_ids.h`, `ui_ids.h`, `mus_ids.h` (вызывается из `tools/build.ps1`,
+`str_ids.h`, `ui_ids.h`, `mus_ids.h` (вызывается из `CMakeLists.txt`,
 выход в `tmp/build/gen`). Реестры собраны однократно (из `interfaces.rul` и
 `music.rul` обеих игр, ключи строк — из `REF/OpenXcom/src`).
 

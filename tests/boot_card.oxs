@@ -3,7 +3,7 @@
 # Карта обязана быть FAT32: с FAT16 TS-BIOS пишет «System Meditation: FAT32 NOT FOUND!».
 # TS-BIOS в эмуляторе стартует в Setup (NVRAM пуст), выход — F12; F12 эмулятор забирает
 # себе под сброс, поэтому скан-код PS/2 шлётся командой pckey (07 §…).
-# Запуск: powershell -File tools\run.ps1 -Boot -Script tests\boot_card.oxs -Headless
+# Запуск: node tools/run.js -Boot -Script tests/boot_card.oxs -Headless
 # Проверять глазами: tmp/shots/boot/ — 00 Setup, 02 панели WC с OXZTFTD.SPG.
 
 wait 400

@@ -35,7 +35,7 @@ for (const z of zooms) {
 }
 L.push('exit 0');
 fs.writeFileSync('tmp/globe_sweep.oxs', L.join('\n') + '\n');
-const out = cp.execFileSync('powershell', ['-File', 'tools\\run.ps1', '-Script', 'tmp\\globe_sweep.oxs', '-Headless'], { encoding: 'utf8', maxBuffer: 64 << 20 });
+const out = cp.execFileSync(process.execPath, ['tools/run.js', '-Script', 'tmp/globe_sweep.oxs', '-Headless'], { encoding: 'utf8', maxBuffer: 64 << 20 });
 fs.writeFileSync('tmp/globe_sweep.log', out);
 const peeks = [...out.matchAll(/_ctx\+6:\s*([0-9A-Fa-f]{2})\s+([0-9A-Fa-f]{2})\s+([0-9A-Fa-f]{2})\s+([0-9A-Fa-f]{2})/g)];
 const warn = out.split('\n').filter(s => /pool full|too big|no pages|bad/.test(s));

@@ -1,5 +1,5 @@
-// Список файлов в образе карты (FAT16/FAT32, только чтение) — проверка, что robimg
-// сложил в образ то, что нужно: node tools\fatls.js tmp\oxz_card.img [путь]
+// Список файлов в образе карты (FAT16/FAT32, только чтение) — проверка, что dist.js
+// (fat32img.js) сложил в образ то, что нужно: node tools\fatls.js tmp\oxz_card.img [путь]
 const fs = require('fs');
 const img = process.argv[2] || 'tmp/oxz_card.img';
 const want = (process.argv[3] || '').toUpperCase();

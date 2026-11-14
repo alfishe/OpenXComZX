@@ -3,7 +3,7 @@
 # сохранение и главное меню; в списке загрузки — «(Ironman)», загрузка.
 # Слот 6 (индекс 5): tmp/saves/TFTD/SLOT05.SAV. Смещения state_t: hdr.ironman #0007,
 # iron_slot #2DE6. Снимки — tmp/shots/ironman/.
-# Запуск: powershell -File tools\run.ps1 -Script tests\ironman.oxs -Headless
+# Запуск: node tools/run.js -Script tests/ironman.oxs -Headless
 
 waitmark 1 600
 poke _alien_off 1

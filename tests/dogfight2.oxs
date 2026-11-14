@@ -3,7 +3,7 @@
 # отход. 2) НЛО глубже, чем может Barracuda (maxAltitude 3, poke _df_dbg_alt 4):
 # DogfightError «глубина», бой свёрнут и ждёт; НЛО поднялось (ufo[1].altitude #272A = 3)
 # — бой развернулся сам (handleDogfights). Снимки — tmp/shots/dogfight2/.
-# Запуск: powershell -File tools\run.ps1 -Script tests\dogfight2.oxs -Headless
+# Запуск: node tools/run.js -Script tests/dogfight2.oxs -Headless
 
 waitmark 1 600
 poke _alien_off 1

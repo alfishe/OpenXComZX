@@ -2,14 +2,14 @@
 # One-time setup for building OpenXComZX on macOS (Homebrew) or Linux.
 #   sh tools/setup_unix.sh
 # macOS: installs the Homebrew packages. Linux: install the packages from your distribution
-# first (see LINUX_PACKAGES below; PowerShell - from Microsoft's repository).
+# first (see LINUX_PACKAGES below).
 # Fetches the OpenXcom rules, strings and fonts the data converter needs into REF/OpenXcom
 # (a clone of github.com/OpenXcom/OpenXcom at OPENXCOM_COMMIT) when they are missing.
 # Then builds SDCC 4.5.0 (Z80 port only) into tmp/toolchain/sdcc-4.5.0 - CMakeLists.txt
 # finds it before PATH.
 # SDCC must be exactly 4.5.0: the code works around its code generation bugs
 # (CLAUDE.md, tools/checkasm.js); Homebrew ships a newer one.
-# Then: pwsh tools/build.ps1 [-Game TFTD|UFO] [-GameDir <original game folder>]
+# Then: node tools/build.js [-Game TFTD|UFO] [-GameDir <original game folder>]
 set -eu
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
@@ -19,9 +19,9 @@ SDCC_URL="https://sourceforge.net/projects/sdcc/files/sdcc/$SDCC_VERSION/sdcc-sr
 TOOLCHAIN="$ROOT/tmp/toolchain"
 PREFIX="$TOOLCHAIN/sdcc-$SDCC_VERSION"
 OS=$(uname -s)
-# pwsh - build scripts; node - build helpers and the data converter (tools/oxzconv);
-# cmake/ninja - the build; mtools - SD card image; boost/bison/flex/g++ - SDCC sources.
-LINUX_PACKAGES="(Debian/Ubuntu) build-essential cmake ninja-build nodejs mtools libboost-dev bison flex texinfo zlib1g-dev git"
+# node - build, card, run and test scripts and the data converter (tools/oxzconv);
+# cmake/ninja - the build; boost/bison/flex/g++ - SDCC sources.
+LINUX_PACKAGES="(Debian/Ubuntu) build-essential cmake ninja-build nodejs libboost-dev bison flex texinfo zlib1g-dev git"
 # OpenXcom version the converter output is verified against (project_docs/01_environment.md)
 OPENXCOM_URL=https://github.com/OpenXcom/OpenXcom.git
 OPENXCOM_COMMIT=4a4bae5
@@ -29,7 +29,7 @@ OPENXCOM_DIR="$ROOT/REF/OpenXcom"
 
 if [ "$OS" = Darwin ]; then
     JOBS=$(sysctl -n hw.ncpu)
-    brew install powershell node cmake ninja mtools boost bison flex
+    brew install node cmake ninja boost bison flex
     # Homebrew bison/flex: the macOS ones are too old. Only boost from Homebrew on the
     # include path - the whole /opt/homebrew/include drags isl/gmp into sdcpp and breaks it.
     BREW=$(brew --prefix)
@@ -39,8 +39,8 @@ if [ "$OS" = Darwin ]; then
     sha256() { shasum -a 256 -c -; }
 else
     JOBS=$(nproc)
-    for t in cc c++ make bison flex node cmake ninja mformat pwsh git; do
-        command -v "$t" > /dev/null || { echo "missing: $t - install $LINUX_PACKAGES, PowerShell"; exit 1; }
+    for t in cc c++ make bison flex node cmake ninja git; do
+        command -v "$t" > /dev/null || { echo "missing: $t - install $LINUX_PACKAGES"; exit 1; }
     done
     SDCC_CPPFLAGS=""
     sha256() { sha256sum -c -; }

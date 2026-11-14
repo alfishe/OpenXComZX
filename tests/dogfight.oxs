@@ -7,7 +7,7 @@
 # Журнал — строки «df:» консоли; исход по ГСЧ (под сценарием зерно постоянное) —
 # сменится логика — поправить.
 # ufo[0] в state_t: #26CD (status +1). Снимки — tmp/shots/dogfight/.
-# Запуск: powershell -File tools\run.ps1 -Script tests\dogfight.oxs -Headless
+# Запуск: node tools/run.js -Script tests/dogfight.oxs -Headless
 
 waitmark 1 600
 poke _alien_off 1

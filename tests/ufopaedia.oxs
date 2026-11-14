@@ -3,7 +3,7 @@
 # (корабли, оружие, техника, снаряжение, броня, постройки, USO, тексты).
 # Все исследования открыты записью в discovered (#006E, 20 байт).
 # Снимки — tmp/shots/ufopaedia/.
-# Запуск: powershell -File tools\run.ps1 -Script tests\ufopaedia.oxs -Headless
+# Запуск: node tools/run.js -Script tests/ufopaedia.oxs -Headless
 
 waitmark 1 600
 poke _alien_off 1

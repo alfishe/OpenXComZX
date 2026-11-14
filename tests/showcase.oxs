@@ -1,7 +1,7 @@
-# Снимки для README (tools\readme_shots.ps1): главное меню, глобус на закате на зумах 0–3
+# Снимки для README (tools/readme_shots.js): главное меню, глобус на закате на зумах 0–3
 # (терминатор, реки, подписи стран и городов), база, Уфопедия. Время стоит и закреплено, курсор
 # скрыт — кадры воспроизводимы. Годится для обеих игр (-Game UFO при сборке).
-# Запуск: powershell -File tools\run.ps1 -Script tests\showcase.oxs -Headless
+# Запуск: node tools/run.js -Script tests/showcase.oxs -Headless
 
 waitmark 1 600
 poke _alien_off 1

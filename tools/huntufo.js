@@ -163,8 +163,8 @@ function onAlive() {
 }
 
 say(`охота: нужно боёв ${want}, предел ${maxFrames} кадров`);
-const emu = spawn('powershell', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', path.join(root, 'tools', 'run.ps1'),
-	'-Cmd', 'tmp\\hunt\\cmd.txt', '-Headless'], { cwd: root });
+const emu = spawn(process.execPath, [path.join(root, 'tools', 'run.js'),
+	'-Cmd', 'tmp/hunt/cmd.txt', '-Headless'], { cwd: root });
 let buf = '';
 function onData(d) {
 	buf += d.toString('latin1');

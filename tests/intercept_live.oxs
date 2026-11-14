@@ -3,7 +3,7 @@
 # корабль в списке -> OK -> время вперёд -> встреча и воздушный бой. В intercept/dogfight
 # этот путь обходится отладочными ключами (_geo_dbg_fly, _ui_request 216).
 # Перед «Intercept» — снимок машины tmp/saves/icpt_before.bin (повторять участок: load).
-# Снимки — tmp/shots/icpt/. Запуск: powershell -File tools\run.ps1 -Script tests\intercept_live.oxs -Headless
+# Снимки — tmp/shots/icpt/. Запуск: node tools/run.js -Script tests/intercept_live.oxs -Headless
 
 # сторож ячейки с сохранённым IX: в 2026-10-24 globe_xy вернула испорченный IX, и mk_add ушла по нему
 ixguard _globe_xy

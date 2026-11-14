@@ -3,7 +3,7 @@
 # под ним (CURSOR.PCK: задняя половина под содержимым клетки, передняя поверх),
 # клик уводит бойца в эту клетку, а перерисовываются только две клетки.
 # Снимки — tmp/shots/mapgen/70_cursor.png, 71_after_move.png.
-# Запуск: powershell -File tools\run.ps1 -Script tests\bat_cursor.oxs -Headless
+# Запуск: node tools/run.js -Script tests/bat_cursor.oxs -Headless
 
 waitmark 1 600
 poke _alien_off 1

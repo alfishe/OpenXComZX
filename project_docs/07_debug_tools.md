@@ -3,36 +3,36 @@
 ## 1. Быстрый старт
 
 ```
-powershell -File tools\build.ps1                                        # сборка -> tmp\build\oxz.spg
-powershell -File tools\run.ps1                                          # запуск в окне (руками)
-run.cmd                                                                 # только окно игры, без консоли (для записи Win+G); с аргументами — как run.ps1, с консолью
-powershell -File tools\run.ps1 -Script tests\selftest.oxs -Headless     # самотест банков/страниц
-powershell -File tools\run.ps1 -Script tests\ui_geoscape.oxs -Headless  # автотест интерфейса
-powershell -File tools\run.ps1 -Script tests\ui_geoscape.oxs            # то же в окне, затем руками
-powershell -File tools\run.ps1 -Frames 300 -Shot tmp\shots\x.png        # N кадров, снимок, выход
+node tools/build.js                                       # сборка -> tmp/build/oxz.spg
+node tools/run.js                                         # запуск в окне (руками)
+run.cmd                                                   # только окно игры, без консоли (для записи Win+G); с аргументами — как run.js, с консолью
+node tools/run.js -Script tests/selftest.oxs -Headless    # самотест банков/страниц
+node tools/run.js -Script tests/ui_geoscape.oxs -Headless # автотест интерфейса
+node tools/run.js -Script tests/ui_geoscape.oxs           # то же в окне, затем руками
+node tools/run.js -Frames 300 -Shot tmp/shots/x.png       # N кадров, снимок, выход
 ```
 
 Все артефакты — в `tmp/` (правило проекта): сборка в `tmp/build`, снимки
 в `tmp/shots` (снимки автотеста интерфейса — отдельно, `tmp/shots/ui/`),
 ini эмулятора `tmp/build/oxz.ini`, метки `tmp/build/oxz.labels`.
 
-## 2. Конвейер сборки (`CMakeLists.txt`, обёртка `tools/build.ps1`)
+## 2. Конвейер сборки (`CMakeLists.txt`, обёртка `tools/build.js`)
 
 Раскладка памяти — 08 §4. С 2026-11-13 сборку описывает `CMakeLists.txt` в корне
-(CMake ≥ 3.20 + Ninja), `tools/build.ps1` — обёртка: настраивает `tmp/build`
+(CMake ≥ 3.20 + Ninja), `tools/build.js` — обёртка: настраивает `tmp/build`
 (`-DOXZ_GAME`, `-DOXZ_GAME_DIR`, `-DOXZ_CARD` из `-Game`, `-GameDir`, `-NoCard`) и
 зовёт `cmake --build`. cmake и ninja — из PATH, на Windows также из Visual Studio
 (vswhere). `-Clean` — собрать с нуля, `OXZ_JOBS` — число параллельных задач.
 Каждый исходник — отдельный шаг: пересобираются только изменённые файлы и те, чьи
 заголовки изменились (depfile `sdcc -MMD`), независимые — параллельно. Без изменений
-сборка ничего не делает. Результат совпадает с прежним `build.ps1` байт в байт
+сборка ничего не делает. Результат совпадал с прежним сценарием сборки (до CMake) байт в байт
 (`oxz.ihx`, `oxz.map`, `oxz.labels`; в SPG — кроме даты и времени заголовка,
 воспроизводимый заголовок — `SOURCE_DATE_EPOCH`).
 
 1. Данные игры (`tmp/sd/OXZ/<игра>`) конвертируются конвертером на Node
    (`tools/oxzconv`, `cmake/convert.cmake`), если их нет или исходники конвертера
    новее; `oxzconv.js headers` →
-   `tmp/build/gen/*.h`. Карта (`tools/dist.ps1 -NoBuild` → `distr/`, `oxz_card.img`) —
+   `tmp/build/gen/*.h`. Карта (`tools/dist.js -NoBuild` → `distr/`, `oxz_card.img`) —
    цель `card`, когда изменились данные.
 2. `tmp/build/banks.s` (таблица «банк → страница», пишется при configure и только при
    изменении) и `packs.s` + `packs.data` (`tools/mkpacks.js`: страницы пакетов,
@@ -56,7 +56,7 @@ ini эмулятора `tmp/build/oxz.ini`, метки `tmp/build/oxz.labels`.
 8. `tools/mklabels.js` — `.noi` (глобальные символы) + `.cdb` (статические
    функции, имя `модуль$функция`) → метки `PP:AAAA имя`.
 
-## 3. Запуск (`tools/run.ps1`)
+## 3. Запуск (`tools/run.js`)
 
 - Генерирует `tmp/build/oxz.ini` из `unreal/build/oxz/Unreal.ini`
   (`tools/mkini.js`): `AUTOLOAD.diskA=` (пусто), `AUTOLOAD.snapshot=` → наш
@@ -147,9 +147,9 @@ game, page, pad, offs, len, result`, пишет его адрес и коман�
   счётчики копятся (пара `msx_prev/msx` держится около 0..255, интерполяция
   внутри кадра — через разность). Мышь захватывается левым кликом в окне,
   отпускается `Shift+Esc` (`main.lockmouse`); скорость — `MouseScale` в ini.
-- Запуск без сценария/кадров/снимка (`run.ps1` без ключей) пишет в ini
+- Запуск без сценария/кадров/снимка (`run.js` без ключей) пишет в ini
   `MISC.HideConsole=1` — эмулятор закрывает свою консоль (`FreeConsole`), а
-  `run.cmd` без аргументов стартует PowerShell скрытым: на экране только окно
+  `run.cmd` без аргументов стартует `node tools/run.js` свёрнутым: на экране только окно
   игры, и Xbox Game Bar (Win+G) записывает его. Вывод в консоль (`ui: screen`)
   в этом режиме не виден.
 
@@ -158,12 +158,12 @@ game, page, pad, offs, len, result`, пишет его адрес и коман�
 Одна команда в строке, `#` — комментарий. Выполняются на границах кадров.
 
 Строка `#@set СЕКЦИЯ.КЛЮЧ=ЗНАЧЕНИЕ` — настройка ini эмулятора для этого сценария
-(`run.ps1` дописывает её поверх стандартных; руками — `run.ps1 -Set 'ZC.SDHC=1'`).
+(`run.js` дописывает её поверх стандартных; руками — `run.js -Set 'ZC.SDHC=1'`).
 Так `sdinfo_sdhc.oxs` включает карту SDHC (`ZC.SDHC=1` — OCR с битом CCS и адрес команд
 в блоках; без него Unreal эмулирует только SDSC), а `sdinfo_nocard.oxs` убирает карту
 (`ZC.SDCARD=`). `ZC.FaultDmaSpi=1` — машина без канала DMA SPI→RAM с первого такта
 (как команда `fault dmaspi 1`): игра должна сама перейти на посекторное чтение карты
-(23 §5). В `runtests.ps1` имя `сценарий+nodma` запускает сценарий именно так.
+(23 §5). В `runtests.js` имя `сценарий+nodma` запускает сценарий именно так.
 
 | Команда | Действие |
 |---|---|
@@ -261,25 +261,25 @@ waitmark 32 300                 # снова геоскейп
 selftest 22, ui_geoscape 2816, campaign 2676 (добавлены графики, Funding, MonthlyCosts
 после месяца), lab 775, transfer 660, craft 482, ufopaedia 1617.
 
-Все сценарии разом: `powershell -File tools\runtests.ps1` (или список имён); итог —
+Все сценарии разом: `node tools/runtests.js` (или список имён); итог —
 строка `имя=код(кадров)`, у не прошедших — хвост вывода эмулятора, код выхода —
 число не прошедших.
 
-Листы снимков: `powershell -File tools\shotsheet.ps1 -Dir tmp\shots\campaign
+Листы снимков: `node tools/shotsheet.js -Dir tmp/shots/campaign
 -Out tmp\shots\sheets\campaign` (по умолчанию — `tmp\shots\ui`).
-Увеличенный фрагмент (без сглаживания): `powershell -File tools\zoom.ps1 -In снимок.png
+Увеличенный фрагмент (без сглаживания): `node tools/zoom.js -In снимок.png
 -X 80 -Y 52 -W 160 -H 96 [-Scale 4]` → `снимок_zoom.png`. Сколько пикселей
 различаются в прямоугольнике двух снимков (цикл палитры, мигание):
-`powershell -File tools\shotdiff.ps1 -A a.png -B b.png -X … -Y … -W … -H …`.
+`node tools/shotdiff.js -A a.png -B b.png -X … -Y … -W … -H …`.
 
-Снимки для README: `powershell -File tools\readme_shots.ps1 [-Game UFO] [-NoBuild]` — собирает
+Снимки для README: `node tools/readme_shots.js [-Game UFO] [-NoBuild]` — собирает
 игру, гоняет нужные сценарии (`showcase.oxs` и автотесты) копиями в `tmp\readme\<игра>\` со
 строкой `poke _cursor_off 1` после каждого `waitmark 1` (курсор — только спрайт, поведение то
 же) и кладёт выбранные кадры (таблица `$pick`) в `project_docs\scr\` увеличенными вдвое без
 сглаживания. После `-Game UFO` пересобрать TFTD. В README — группы не больше чем по четыре
 снимка (просьба пользователя), сводных листов-миниатюр в документах нет.
 
-Раскладка времени рендера глобуса по зумам: `powershell -File tools\globeprof.ps1
+Раскладка времени рендера глобуса по зумам: `node tools/globeprof.js
 [-Zooms 0,1,2] [-Hour 18] [-Out tmp\globeprof.md] [-From каталог]` — для каждого зума
 сценарий «новая игра → зум → время стоит → пробный поворот вправо → профиль поворота вправо»
 (свежий вид: «влево и обратно» вернул бы вид из кэша отрезков, 24 §5). Окно профиля —
@@ -290,8 +290,7 @@ selftest 22, ui_geoscape 2816, campaign 2676 (добавлены графики,
 подписи, вид с SD, C рендера и дальняя память, ожидание кадра в `blit`, ожидание DMA,
 простой `wait_frames`, интерфейс и ISR); строка `work` — окно без простоя и ожиданий, под
 таблицей — главные функции «other». `-From` — не запускать эмулятор, а свести сохранённые
-`prof_z<зум>.txt` (сравнение до/после). Параметр `-Zooms` из `-File` в PowerShell 5.1
-приходит строкой («0,1,2» → 12) — без него считаются все зумы. Внутренние метки асм-модулей
+`prof_z<зум>.txt` (сравнение до/после). `-Zooms 0,1,2` — список зумов, без него — все. Внутренние метки асм-модулей
 для профиля делаются глобальными (`.globl`) — иначе время уходит в ближайшую глобальную метку.
 
 Правильность рендера глобуса: `node tools\globe_model.js [lon lat zoom]` — модель
@@ -305,11 +304,9 @@ WORLD.DAT» (PNG кадра, эталона и расхождений в `tmp/`;
 расхождений в `tmp/shots/globe_sweep/`); `VIEWS="lon,lat,zoom;..."` — заданные виды
 (pokew центра за шаг RIGHT до цели; шаг зависит от зума), `GAME=UFO` — для сборки UFO.
 Лог прогона — `tmp/globe_sweep.log` (строки `globe:` — кадров на рендер).
-Скрипты `tools/*.ps1` читает PowerShell 5.1 без BOM как ANSI: строки вывода в них —
-латиницей (комментарии можно по-русски).
 
 Все сценарии запускаются с образом карты `oxz_card.img` в корне проекта (собирает
-`tools/dist.ps1`, подключает `tools/run.ps1` через `ZC.SDCARD`,
+`tools/dist.js`, подключает `tools/run.js` через `ZC.SDCARD`,
 13_sd_card.md §5, 23_distribution.md). Эмулятор — с `TS_VDAC=5BIT` (02 §4: палитра с битом 15).
 
 ## 6. Профилировщик
@@ -349,12 +346,10 @@ inc,dec 16 / логика / сдвиги / bit / переходы / call,ret / �
 `IN r,(C)` при BC = #27AF и условный переход сразу за ней (`machine/zx_machine.h`, хук профилировщика).
 Раскладка рендера глобуса по этапам и функциям на расчёт / порты DMA / ожидание DMA / пересылки
 (блочные команды и `far_*`, `memcpy`) / ожидание кадра — `node tools/globeprof_split.js 3,4,5 25` по
-профилям `toolsglobeprof.ps1 -Zooms <z> -Hour 18` (из bash — по одному зуму).
+профилям `node tools/globeprof.js -Zooms <z> -Hour 18`.
 
 ## 7. Подводные камни
 
-- Windows PowerShell 5.1 читает UTF-8 без BOM как ANSI: **не править
-  текстовые файлы через `Get-Content`/`Set-Content`** — портится кириллица.
 - Сборка эмулятора — только `-j 2` и Debug (см. 01).
 - `-o` и `shot` без каталога пишут относительно корня проекта — давать пути
   в `tmp/`.
@@ -417,8 +412,8 @@ inc,dec 16 / логика / сдвиги / bit / переходы / call,ret / �
 
 ## Живое управление эмулятором (2026-09-26)
 
-```powershell
-powershell -File tools\run.ps1 -Cmd tmp\oxz_cmd.txt
+```sh
+node tools/run.js -Cmd tmp/oxz_cmd.txt
 ```
 
 Эмулятор запускается **с окном** и читает файл команд на ходу: всё, что в него дописали,

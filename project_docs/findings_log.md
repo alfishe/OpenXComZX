@@ -1487,3 +1487,25 @@
   для эмулятора; дальше игра не идёт. unreal-ng повторяет RTL: BLT2 только при `TS_VDAC` ≠ NONE
   (`portdecoder_tsconf.cpp`: `SetBlt2Built(... || ts_vdac != 0)`), в его `configs/ts-conf/unreal.ini`
   по умолчанию `TS_VDAC=NONE` — для игры нужна копия с `TS_VDAC=5BIT` (01).
+- **Сборка и инструменты без PowerShell.** Все `tools/*.ps1` заменены скриптами Node с теми же
+  ключами (`node tools/build.js -Game UFO -GameDir …`, `run.js -Script … -Headless`, `runtests.js`,
+  `dist.js -NoBuild`, `run_ung.js`, `globebench.js`, `globeprof.js`, `globeshots.js`,
+  `readme_shots.js`, `shotdiff.js`, `shotsheet.js`, `zoom.js`); общий разбор ключей —
+  `tools/args.js` (без учёта регистра, списки — повтором или через запятую). PNG для снимков —
+  `tools/pngimg.js` (любой PNG без чересстрочности → RGBA, запись RGB, ближайший сосед, шрифт 5×7
+  для подписей листов) вместо System.Drawing. CMake зовёт карту `node tools/dist.js -NoBuild`,
+  `OXZ_PWSH` больше не ищется; `run.cmd` — через `node`. Нужны только Node, CMake, Ninja, SDCC.
+  - Образ карты — `tools/fat32img.js` вместо `robimg.exe` (Windows) и `mkmbr.js` + mtools:
+    MBR, раздел `0C` с сектора 2048, FAT32, кластер 2 КБ, 32 резервных сектора, FSInfo и копия
+    загрузочного сектора, файлы подряд, длинные имена VFAT (`Help.txt`) и биты регистра NT для
+    строчных имён 8.3 (`boot.$C`). В unreal-ng своей утилиты, которая создаёт FAT32 с нуля, нет:
+    `zxdisk` (unreal-disk) читает и правит готовые образы (`volumes`, `ls`, `cat`, `put`, `mkdir`),
+    а папку хоста эмулятор сам показывает как том FAT32 (`media/sd.zc/insert` с каталогом).
+    `zxdisk` стал независимой проверкой: том и метка верны, все файлы образа побайтно равны
+    исходным (и в образе, записанном на Windows).
+  - Проверено: чистая сборка TFTD `build.js -Clean` (SPG отличается от прежнего инкрементального
+    только потому, что пакеты заново сделал Node-конвертер — расхождение TFTD `GEO.PAK`, 09 §2);
+    повторная — «no work to do»; на Windows `build.js` находит cmake и ninja Visual Studio;
+    `run_ung.js -Launch` с образом и с папкой `distr` — игра читает пакеты карты (ролик из
+    `CUTS.PAK`), снимки совпадают попиксельно. `run.js`/`runtests.js` (Unreal.exe, Windows) на
+    этой машине не запускались — нет `unreal/`.

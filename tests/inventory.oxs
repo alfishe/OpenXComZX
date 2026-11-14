@@ -4,7 +4,7 @@
 # разрядить взятое оружие (обойма — в левую руку, оружие — в правую), отменить взятие правой
 # кнопкой. Все исследования открыты (discovered, #006E, 20 байт) — имена предметов, не «артефакт».
 # Снимки — tmp/shots/inv/.
-# Запуск: powershell -File tools\run.ps1 -Script tests\inventory.oxs -Headless
+# Запуск: node tools/run.js -Script tests/inventory.oxs -Headless
 
 waitmark 1 600
 poke _alien_off 1

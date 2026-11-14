@@ -60,7 +60,7 @@ typedef struct {
 	fat_info_t fi;
 } sdd_t;
 #define MOUNT_EARLY 0xFE
-// В памяти банка (build.ps1: ram банка 14), а не в Win1: Win1 почти полон. Память банка при
+// В памяти банка (CMakeLists.txt: RAM банка 14), а не в Win1: Win1 почти полон. Память банка при
 // старте не обнуляется — sddiag_run чистит D первым делом; экран зовёт её на EVT_OPEN.
 static sdd_t __at(0xB000) D;
 

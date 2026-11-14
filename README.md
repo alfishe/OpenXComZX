@@ -11,7 +11,7 @@ ZX Evolution / Pentevo: Z80 до 14 МГц, 4 МБ страничной памя
 ## Как это выглядит
 
 Кадры 320×200 из эмулятора, увеличены вдвое без сглаживания. Игра — Terror from the
-Deep; в конце — то же на UFO Defense. Снимки делает `tools\readme_shots.ps1` из
+Deep; в конце — то же на UFO Defense. Снимки делает `tools/readme_shots.js` из
 автотестов, так что они всегда соответствуют текущей сборке.
 
 ### Геоскейп
@@ -69,25 +69,24 @@ Deep; в конце — то же на UFO Defense. Снимки делает `t
 
 ## Сборка
 
-Сборка — CMake + Ninja (`CMakeLists.txt`), `tools/build.ps1` — обёртка над ними; работает
+Сборка — CMake + Ninja (`CMakeLists.txt`), `tools/build.js` — обёртка над ними; работает
 на Windows, macOS и Linux. Нужны:
 
 - **SDCC 4.5.0** (`sdcc`, `sdasz80`) — ровно эта версия: код обходит её ошибки
   кодогенерации; на macOS и Linux её собирает `tools/setup_unix.sh` (в `tmp/toolchain`);
 - **CMake** ≥ 3.20 и **Ninja** (на Windows подойдут и те, что ставит Visual Studio);
-- **Node.js** — скрипты сборки и конвертер данных (`tools/oxzconv`); ему нужны правила,
-  строки и шрифты OpenXcom в `REF/OpenXcom` (клон `github.com/OpenXcom/OpenXcom`,
-  `tools/setup_unix.sh` делает его сам); **PowerShell** (`pwsh` вне Windows); вне Windows
-  для образа карты — **mtools**;
+- **Node.js** — все скрипты (сборка, карта, запуск, тесты) и конвертер данных
+  (`tools/oxzconv`); конвертеру нужны правила, строки и шрифты OpenXcom в `REF/OpenXcom`
+  (клон `github.com/OpenXcom/OpenXcom`, `tools/setup_unix.sh` делает его сам);
 - своя копия **X-COM: UFO Defense** или **Terror from the Deep** — данные игры, они не
   распространяются (`-GameDir <папка с GEODATA>`);
 - эмулятор с TS-Config: **Unreal Speccy** (`unreal/`, автотесты) или **unreal-ng**
-  (`tools/run_ung.ps1`), в обоих — `TS_VDAC=5BIT`.
+  (`tools/run_ung.js`), в обоих — `TS_VDAC=5BIT`.
 
-```powershell
-powershell -File tools\build.ps1              # TFTD (по умолчанию)
-powershell -File tools\build.ps1 -Game UFO    # UFO
-pwsh tools/build.ps1 -Game UFO -GameDir <папка игры>   # macOS / Linux
+```sh
+node tools/build.js                                # TFTD (по умолчанию)
+node tools/build.js -Game UFO                      # UFO
+node tools/build.js -Game UFO -GameDir <папка игры> # игра не в Steam/
 ```
 
 Пересобираются только изменённые файлы, независимые — параллельно.
@@ -95,10 +94,10 @@ pwsh tools/build.ps1 -Game UFO -GameDir <папка игры>   # macOS / Linux
 Сборка собирает ядро и банки, гоняет проверки раскладки памяти, конвертирует данные
 игры и делает образ SD-карты. Результат — `tmp\build\oxz.spg`.
 
-```powershell
-powershell -File tools\run.ps1                # запустить в эмуляторе
-powershell -File tools\runtests.ps1           # все автотесты
-powershell -File tools\readme_shots.ps1       # снимки для этой страницы
+```sh
+node tools/run.js                # запустить в эмуляторе
+node tools/runtests.js           # все автотесты
+node tools/readme_shots.js       # снимки для этой страницы
 ```
 
 Автотесты — сценарии в `tests\*.oxs`: эмулятор проигрывает нажатия, сверяет память
@@ -106,7 +105,7 @@ powershell -File tools\readme_shots.ps1       # снимки для этой с�
 
 ## На настоящем железе
 
-`powershell -File tools\dist.ps1` собирает обе игры и раскладывает содержимое карты
+`node tools/dist.js` собирает обе игры и раскладывает содержимое карты
 в `distr\` (игры, данные `OXZ\`, загрузчик Wild Commander), а образ — в `oxz_card.img`.
 Карта — один раздел **FAT32** (с FAT16 TS-BIOS не грузится), содержимое `distr\` —
 в корень. Подробно — [project_docs/23_distribution.md](project_docs/23_distribution.md).

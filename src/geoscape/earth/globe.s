@@ -1579,7 +1579,7 @@ render:
 	ld	a, (_gl_dbg)
 	or	a, a
 	ret	z
-	ld	hl, #s_zoom			; формат как у рёберного пути (globebench.ps1)
+	ld	hl, #s_zoom			; формат как у рёберного пути (globebench.js)
 	call	_dbg_puts
 	ld	a, (r_z)
 	call	dec8

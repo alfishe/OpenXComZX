@@ -4,7 +4,7 @@
 # (src/common/screens.h) и показывают отладочные данные. Клики — курсор прямо в
 # экранные координаты (pokew _cursor_x/_cursor_y) + click L; экран сообщает
 # свой номер в #FCAF (waitmark). Экономика и сохранения — tests/campaign.oxs.
-# Запуск: powershell -File tools\run.ps1 -Script tests\ui_geoscape.oxs -Headless
+# Запуск: node tools/run.js -Script tests/ui_geoscape.oxs -Headless
 # Снимки экранов — отдельная папка tmp/shots/ui/ (NN_имя.png, по порядку прохода).
 
 waitmark 1 600

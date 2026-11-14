@@ -52,7 +52,7 @@ typedef struct {
 	uint8_t w, l, sz, groups;          // размеры в клетках и маска групп
 } blk_t;
 
-// Состояние генерации — в памяти банка (Win1 занят), см. ram= в build.ps1
+// Состояние генерации — в памяти банка (Win1 занят), см. RAM банка в oxz_bank() (CMakeLists.txt)
 typedef struct {
 	uint8_t mx, my;                    // размер поля в модулях
 	uint8_t sz;                        // этажей

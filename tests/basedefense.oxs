@@ -5,7 +5,7 @@
 # уничтожено в любом случае. 2) База 1 (poke — без построек и людей): BaseDestroyed,
 # база удалена. Смещения state_t: base[0].fac #0A3D + 3k, base[1] #0BEE (pos +16),
 # ufo[0] #26CD (status +1). Снимки — tmp/shots/basedefense/.
-# Запуск: powershell -File tools\run.ps1 -Script tests\basedefense.oxs -Headless
+# Запуск: node tools/run.js -Script tests/basedefense.oxs -Headless
 
 waitmark 1 600
 poke _alien_off 1

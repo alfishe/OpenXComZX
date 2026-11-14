@@ -1,8 +1,8 @@
 # Глобус (src/geoscape/earth/globe.c, globe.md): новая игра -> база -> геоскейп; снимки на зумах 0..5
 # (зум — SS+K / SS+J и кнопки GEOBORD), поворот стрелками, вид вниз (наклон). Строки
 # «globe:» консоли — ячейки, многоугольники, отрезки, кадров на рендер. Снимки —
-# tmp/shots/globe/ (сравнение версий — tools/shotdiff.ps1). ST->zoom — #0048.
-# Запуск: powershell -File tools\run.ps1 -Script tests\globe.oxs -Headless
+# tmp/shots/globe/ (сравнение версий — tools/shotdiff.js). ST->zoom — #0048.
+# Запуск: node tools/run.js -Script tests/globe.oxs -Headless
 #   (сборка -Game UFO — те же шаги, снимки перезапишутся)
 
 waitmark 1 600
